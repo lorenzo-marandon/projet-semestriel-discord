@@ -5,7 +5,7 @@ import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 
-import io.quarkus.hibernate.orm.panache.PanacheRepository;
+import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.persistence.Entity;
 import jakarta.ws.rs.Path;
 
@@ -27,7 +27,7 @@ public class NamingConventionTest {
         @ArchTest
         static final ArchRule repositories_should_be_named_repository = classes()
                         .that().resideInAPackage("..persistence..")
-                        .and().implement(PanacheRepository.class)
+                        .and().implement(PanacheRepositoryBase.class)
                         .should().haveSimpleNameEndingWith("Repository");
 
         @ArchTest
