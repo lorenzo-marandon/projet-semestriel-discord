@@ -10,6 +10,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -26,15 +29,20 @@ public class RoleEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @NotBlank(message = "Role name is required")
     @Column(nullable = false)
     private String name;
 
+    @NotBlank(message = "Role color is required")
     @Column(nullable = false)
     private String color;
 
+    @NotNull(message = "Role position is required")
+    @PositiveOrZero(message = "Role position cannot be negative")
     @Column(nullable = false)
     private Integer position;
 
+    @NotNull(message = "Role guild is required")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "guild_id", nullable = false)
     private GuildEntity guild;

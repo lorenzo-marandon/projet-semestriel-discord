@@ -13,6 +13,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 
 import java.util.UUID;
 
@@ -27,16 +30,21 @@ public class ChannelEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @NotBlank(message = "Channel name is required")
     @Column(nullable = false)
     private String name;
 
+    @NotNull(message = "Channel type is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ChannelType type;
 
+    @NotNull(message = "Channel position is required")
+    @PositiveOrZero(message = "Channel position cannot be negative")
     @Column(nullable = false)
     private Integer position;
 
+    @NotNull(message = "Channel guild is required")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "guild_id", nullable = false)
     private GuildEntity guild;
