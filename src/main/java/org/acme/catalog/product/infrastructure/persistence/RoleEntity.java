@@ -2,11 +2,17 @@ package org.acme.catalog.product.infrastructure.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -28,6 +34,13 @@ public class RoleEntity {
 
     @Column(nullable = false)
     private Integer position;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "guild_id", nullable = false)
+    private GuildEntity guild;
+
+    @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
+    private Set<UserEntity> users = new HashSet<>();
 
     public RoleEntity() {
     }
@@ -64,5 +77,21 @@ public class RoleEntity {
 
     public void setPosition(Integer position) {
         this.position = position;
+    }
+
+    public GuildEntity getGuild() {
+        return guild;
+    }
+
+    public void setGuild(GuildEntity guild) {
+        this.guild = guild;
+    }
+
+    public Set<UserEntity> getUsers() {
+        return users;
+    }
+
+    public void setUsers(Set<UserEntity> users) {
+        this.users = users;
     }
 }
