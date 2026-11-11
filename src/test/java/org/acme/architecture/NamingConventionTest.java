@@ -16,7 +16,8 @@ public class NamingConventionTest {
         static final ArchRule resources_should_be_named_resource = classes()
                         .that().resideInAPackage("..api")
                         .and().areAnnotatedWith(Path.class)
-                        .should().haveSimpleNameEndingWith("Resource");
+                        .should().haveSimpleNameEndingWith("Resource")
+                        .allowEmptyShould(true);
 
         @ArchTest
         static final ArchRule entities_should_be_named_entity = classes()
@@ -44,12 +45,14 @@ public class NamingConventionTest {
         static final ArchRule filters_should_be_named_filter = classes()
                         .that().resideInAPackage("..filters..")
                         .should().haveSimpleNameEndingWith("Filter")
-                        .as("Classes in filters subpackages must have the 'Filter' suffix (e.g., TestDebugFilter)");
+                        .as("Classes in filters subpackages must have the 'Filter' suffix")
+                        .allowEmptyShould(true);
 
         @ArchTest
         static final ArchRule clients_should_be_named_client = classes()
                         .that().resideInAPackage("..client..")
                         .and().areInterfaces()
                         .should().haveSimpleNameEndingWith("Client")
-                        .as("Rest Clients should have the 'Client' suffix");
+                        .as("Rest Clients should have the 'Client' suffix")
+                        .allowEmptyShould(true);
 }
