@@ -13,21 +13,21 @@ skinparam database {
   BorderColor #388E3C
 }
 
-package "API layer\norg.acme.catalog.product.api" {
+package "API layer\norg.acme.discord.api" {
   component "Generic exception mappers" as Errors
 }
 
-package "Application layer\norg.acme.catalog.product.application" {
+package "Application layer\norg.acme.discord.application" {
   component "Create request records" as CreateRequests
   component "Update request records" as UpdateRequests
   component "Response DTO records" as Responses
 }
 
-package "Domain layer\norg.acme.catalog.product.domain" {
+package "Domain layer\norg.acme.discord.domain" {
   component "User, Guild, Role, Channel\nChannelType" as Domain
 }
 
-package "Infrastructure layer\norg.acme.catalog.product.infrastructure" {
+package "Infrastructure layer\norg.acme.discord.infrastructure" {
   component "UserMapper, GuildMapper\nRoleMapper, ChannelMapper" as Mappers
   component "JPA entities" as Entities
   component "UUID Panache repositories" as Repositories

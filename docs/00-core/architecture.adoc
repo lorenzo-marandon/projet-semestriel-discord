@@ -12,29 +12,28 @@ application services begin in ticket #17.
 |Layer |Current package |Implemented responsibility
 
 |*API*
-|`org.acme.catalog.product.api`
+|`org.acme.discord.api`
 |Generic exception mappers for conflict, domain validation, unexpected exceptions,
 Jackson errors, and missing values. There are no Discord JAX-RS resources yet.
 
 |*Application*
-|`org.acme.catalog.product.application`
+|`org.acme.discord.application`
 |Create, full-update, and response DTO records for User, Guild, Role, and Channel. There
 are no Discord application services yet.
 
 |*Domain*
-|`org.acme.catalog.product.domain`
+|`org.acme.discord.domain`
 |Framework-independent records `User`, `Guild`, `Role`, and `Channel`, plus the
 `ChannelType` enumeration.
 
 |*Infrastructure*
-|`org.acme.catalog.product.infrastructure`
+|`org.acme.discord.infrastructure`
 |JPA entities, UUID Panache repositories, and dedicated mappers for the four resources.
 |===
 
 [NOTE]
 ====
-`org.acme.catalog.product` is the current historical package. The validated future package
-is `org.acme.discord`; this configuration cleanup does not perform that rename.
+All project Java layers use the canonical `org.acme.discord` package.
 ====
 
 === Enforced Dependency Rules

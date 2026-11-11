@@ -9,7 +9,7 @@ import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAnyP
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 
-@AnalyzeClasses(packages = "org.acme.catalog.product", importOptions = ImportOption.DoNotIncludeTests.class)
+@AnalyzeClasses(packages = "org.acme.discord", importOptions = ImportOption.DoNotIncludeTests.class)
 class LayerArchitectureTest {
 
     @ArchTest

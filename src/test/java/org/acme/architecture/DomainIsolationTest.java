@@ -8,7 +8,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 import com.tngtech.archunit.core.importer.ImportOption;
 
-@AnalyzeClasses(packages = "org.acme.catalog.product.domain", importOptions = { ImportOption.DoNotIncludeTests.class })
+@AnalyzeClasses(packages = "org.acme.discord.domain", importOptions = { ImportOption.DoNotIncludeTests.class })
 class DomainIsolationTest {
 
         @ArchTest

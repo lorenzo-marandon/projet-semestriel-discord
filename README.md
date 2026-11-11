@@ -9,10 +9,9 @@ validation, and automated tests for users, guilds, roles, and channels.
 > available for the Quarkus application, but they do not currently publish Discord CRUD
 > operations.
 
-The Maven artifact ID and container image name are `discord-api`. The current Java package
-(`org.acme.catalog.product`) and database name (`products`) remain historical identifiers.
-The validated target package is `org.acme.discord`, but package renaming is intentionally
-outside this cleanup phase.
+The Maven artifact ID and container image name are `discord-api`. Java sources use the
+canonical `org.acme.discord` package. The database name (`products`) remains a historical
+identifier and is intentionally unchanged.
 
 ## Implemented foundation
 
@@ -31,7 +30,7 @@ outside this cleanup phase.
 ## Project layout
 
 ```text
-src/main/java/org/acme/catalog/product/
+src/main/java/org/acme/discord/
 ├── api/error/                 Generic exception mappers; no Discord resources yet
 ├── application/dto/           Response, create, and update DTO records
 ├── domain/                    Framework-independent Discord records
@@ -88,7 +87,7 @@ ephemeral PostgreSQL container for the test run.
 
 | Test type | Location | Runner |
 |---|---|---|
-| DTO and mapper unit tests | `src/test/java/org/acme/catalog/product/` | Surefire |
+| DTO and mapper unit tests | `src/test/java/org/acme/discord/` | Surefire |
 | Architecture rules | `src/test/java/org/acme/architecture/` | Surefire + ArchUnit |
 | PostgreSQL mappings | `DiscordPersistenceIT.java` | Failsafe + Testcontainers |
 | Health and OpenAPI | `TechnicalSpecsIT.java` | Failsafe + REST Assured |
