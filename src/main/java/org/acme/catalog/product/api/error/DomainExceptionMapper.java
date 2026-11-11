@@ -6,9 +6,8 @@ import jakarta.ws.rs.ext.Provider;
 
 /**
  * Maps {@link IllegalArgumentException} to an HTTP 400 Bad Request.
- * * Learning Objective: Handle domain validation failures.
- * If a Product Record or DTO fails internal validation, this mapper ensures
- * the client knows exactly what was wrong with the input.
+ * Handles domain validation failures and returns the validation message to the
+ * client.
  */
 @Provider
 public class DomainExceptionMapper implements ExceptionMapper<IllegalArgumentException> {

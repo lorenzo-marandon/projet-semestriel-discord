@@ -34,7 +34,7 @@ are no Discord application services yet.
 [NOTE]
 ====
 `org.acme.catalog.product` is the current historical package. The validated future package
-is `org.acme.discord`; Phase A does not perform that rename.
+is `org.acme.discord`; this configuration cleanup does not perform that rename.
 ====
 
 === Enforced Dependency Rules

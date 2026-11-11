@@ -32,9 +32,9 @@ implemented contract.
 === Identity Transition
 
 The canonical project name is `discord-api`, and the validated future Java package is
-`org.acme.discord`. The Maven artifact ID, current `org.acme.catalog.product` package,
-container image coordinates, database defaults, and `IMAGE_GROUP=brunoe` remain unchanged
-during Phase A.
+`org.acme.discord`. The Maven artifact ID and container image name now use `discord-api`.
+The current `org.acme.catalog.product` package, database defaults, and
+`IMAGE_GROUP=brunoe` remain unchanged during this configuration cleanup.
 
 === Design Principles
 

@@ -20,8 +20,8 @@ planned for ticket #17.
 - [`30-architecture/technical-dependencies-diagram.puml`](30-architecture/technical-dependencies-diagram.puml):
   runtime and test dependencies.
 
-The obsolete Product epic, Product sequences, and Cucumber traceability generator were
-removed. No fictional Discord user stories or sequence diagrams replace them.
+The obsolete starter epic, sequences, and Cucumber traceability generator were removed.
+No fictional Discord user stories or sequence diagrams replace them.
 
 ## Generate HTML and PDF
 

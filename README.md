@@ -9,10 +9,10 @@ validation, and automated tests for users, guilds, roles, and channels.
 > available for the Quarkus application, but they do not currently publish Discord CRUD
 > operations.
 
-The Maven artifact ID, Java package (`org.acme.catalog.product`), container image names,
-and database defaults are historical identifiers retained during this cleanup phase. The
-validated target package is `org.acme.discord`, but that rename is intentionally outside
-Phase A.
+The Maven artifact ID and container image name are `discord-api`. The current Java package
+(`org.acme.catalog.product`) and database name (`products`) remain historical identifiers.
+The validated target package is `org.acme.discord`, but package renaming is intentionally
+outside this cleanup phase.
 
 ## Implemented foundation
 
@@ -110,12 +110,13 @@ See the [documentation guide](docs/README.md) for the source layout.
 
 ## Container images
 
-The existing Maven profiles remain available:
+The existing Maven profiles build the canonical `brunoe/discord-api` image name:
 
 ```bash
 ./mvnw package -Pjvm -DskipTests
 ./mvnw package -Pnative -DskipTests
 ```
 
-Image coordinates still use the historical values during Phase A. In particular,
-`IMAGE_GROUP=brunoe` remains unchanged pending verification.
+The JVM profile produces tag `1.0.0-jvm`, which is also the default `IMAGE_TAG` used by
+Compose. The native profile produces `1.0.0-native`. `IMAGE_GROUP=brunoe` remains
+unchanged pending verification.

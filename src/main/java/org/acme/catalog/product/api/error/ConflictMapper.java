@@ -7,9 +7,8 @@ import jakarta.ws.rs.ext.Provider;
 
 /**
  * Maps {@link IllegalStateException} to an HTTP 409 Conflict response.
- * * Pedagogical Point: The Service throws this standard Java exception
- * when a business rule is violated (e.g., trying to create a product with a
- * duplicate SKU).
+ * A service can throw this standard Java exception when a business rule is
+ * violated.
  */
 @Provider
 public class ConflictMapper implements ExceptionMapper<IllegalStateException> {

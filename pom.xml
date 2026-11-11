@@ -3,7 +3,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.acme</groupId>
-    <artifactId>starter-product-catalog</artifactId>
+    <artifactId>discord-api</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 
     <properties>
@@ -304,7 +304,7 @@
                 <quarkus.container-image.build>true</quarkus.container-image.build>
                 <quarkus.container-image.load>true</quarkus.container-image.load>
                 <quarkus.container-image.group>brunoe</quarkus.container-image.group>
-                <quarkus.container-image.name>starter-product-catalog</quarkus.container-image.name>
+                <quarkus.container-image.name>discord-api</quarkus.container-image.name>
                 <quarkus.container-image.tag>1.0.0-jvm</quarkus.container-image.tag>
                 <quarkus.docker.dockerfile-jvm-path>src/main/docker/Dockerfile.jvm</quarkus.docker.dockerfile-jvm-path>
                 <quarkus.jib.base-jvm-image>registry.access.redhat.com/ubi9/openjdk-21-runtime@sha256:20252d0fd32221be2c6ffa91c19f0344c80c8ce3f054a26a2d7492a172516e53</quarkus.jib.base-jvm-image>
@@ -323,7 +323,7 @@
                 <quarkus.container-image.load>true</quarkus.container-image.load>
                 <quarkus.container-image.push>false</quarkus.container-image.push>
                 <quarkus.container-image.group>brunoe</quarkus.container-image.group>
-                <quarkus.container-image.name>starter-product-catalog</quarkus.container-image.name>
+                <quarkus.container-image.name>discord-api</quarkus.container-image.name>
                 <quarkus.container-image.tag>1.0.0-native</quarkus.container-image.tag>
                 <quarkus.jib.base-native-image>quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-21</quarkus.jib.base-native-image>
             </properties>
