@@ -10,7 +10,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 
 @AnalyzeClasses(packages = "org.acme.catalog.product", importOptions = ImportOption.DoNotIncludeTests.class)
-class LayerArchitecture {
+class LayerArchitectureTest {
 
     @ArchTest
     static final ArchRule layered_architecture = layeredArchitecture()

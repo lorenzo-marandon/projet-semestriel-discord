@@ -1,118 +1,121 @@
-# Product Catalog — Quarkus REST Starter
+# discord-api
 
-> **Lecture context:** This project is the **final example** (`V5`) from the
-> [Java REST Quarkus lecture notebook](https://github.com/ebpro/notebook-java-rest-sample-quarkus).
-> It consolidates the full V1 → V5 architectural progression into a single,
-> production-quality codebase. Read the notebook first to understand how and
-> why each design decision was made.
+`discord-api` is a Java 21 and Quarkus application under active development. Its current
+codebase provides the Discord domain, persistence model, API contracts, mapping layer,
+validation, and automated tests for users, guilds, roles, and channels.
 
-A RESTful Product Catalog built with **Quarkus 3**, **PostgreSQL**, and **Java 21**,
-demonstrating layered architecture, BDD testing, OpenAPI documentation, and
-container-based CI/CD.
+> **Current status:** Discord CRUD REST endpoints and application services are not
+> implemented yet. Their implementation starts with ticket #17. Swagger and OpenAPI are
+> available for the Quarkus application, but they do not currently publish Discord CRUD
+> operations.
 
----
+The Maven artifact ID, Java package (`org.acme.catalog.product`), container image names,
+and database defaults are historical identifiers retained during this cleanup phase. The
+validated target package is `org.acme.discord`, but that rename is intentionally outside
+Phase A.
 
-## Architecture at a Glance
+## Implemented foundation
 
+- Domain records: `User`, `Guild`, `Role`, `Channel`, and `ChannelType`.
+- JPA entities and Panache repositories backed by PostgreSQL.
+- Separate create, full-update, and response DTO records.
+- Dedicated mappers between requests, domain records, persistence entities, and response
+  DTOs.
+- Jakarta Bean Validation on incoming DTOs and persistence fields.
+- Generic exception mappers already retained for the future REST layer.
+- Unit tests for DTO validation and mapping.
+- ArchUnit rules for domain isolation, layer dependencies, statelessness, and naming.
+- PostgreSQL integration tests using Testcontainers.
+- Technical integration tests for Health and OpenAPI.
+
+## Project layout
+
+```text
+src/main/java/org/acme/catalog/product/
+├── api/error/                 Generic exception mappers; no Discord resources yet
+├── application/dto/           Response, create, and update DTO records
+├── domain/                    Framework-independent Discord records
+└── infrastructure/
+    ├── mapper/                User, Guild, Role, and Channel mappers
+    └── persistence/           JPA entities and Panache repositories
 ```
-api/            ← JAX-RS resource, OpenAPI docs, exception mappers
-application/    ← ProductService (framework-free business logic), DTOs
-domain/         ← Product record (immutable, self-validating)
-infrastructure/ ← JPA entity, Panache repository, mapper, REST client
-```
 
-Architectural constraints are enforced automatically by **ArchUnit** tests
-(domain isolation, layer dependencies, naming conventions).
+## Prerequisites
 
----
+- Java 21
+- Docker, for PostgreSQL and Testcontainers
+- The Maven wrapper included in this repository
 
-## Quick Start — Dev Mode (recommended)
+## Run locally
 
-**Prerequisites:** Java 21+, Docker.
+Start only the PostgreSQL service declared in `compose.yml`:
 
 ```bash
-# 1. Start a local PostgreSQL instance
-export DB_NAME=products
-export DB_USER=tpuser
-export DB_PASSWORD=Tp@2026
-export DB_HOST=localhost
-export DB_PORT=15432
-export HOST_POSTGRES_PORT=15432
-export HOST_HTTP_PORT=8080
-
-docker run --name product-catalog-postgres \
-    -e POSTGRES_DB=$DB_NAME \
-    -e POSTGRES_USER=$DB_USER \
-    -e POSTGRES_PASSWORD=$DB_PASSWORD \
-    -p $HOST_POSTGRES_PORT:5432 \
-    -d postgres:16-alpine
-
-# 2. Run the application in Quarkus dev mode (hot reload)
-./mvnw quarkus:dev
+docker compose up -d postgres
+DB_PORT=15432 ./mvnw quarkus:dev
 ```
 
-| Endpoint      | URL                                         |
-|---------------|---------------------------------------------|
-| REST API      | http://localhost:8080/api/v1/products       |
-| Swagger UI    | http://localhost:8080/q/swagger-ui          |
-| Dev console   | http://localhost:8080/q/dev-ui              |
-| Health        | http://localhost:8080/q/health              |
+PowerShell equivalent:
 
-Try the bundled HTTP requests in [`products.http`](products.http) from your IDE.
+```powershell
+docker compose up -d postgres
+$env:DB_PORT = "15432"
+.\mvnw.cmd quarkus:dev
+```
 
-## Running Tests
+Available technical endpoints:
 
-No database setup needed — [Testcontainers](https://testcontainers.com/) spins
-up a real PostgreSQL instance automatically.
+| Purpose | URL |
+|---|---|
+| Swagger UI | <http://localhost:8080/swagger-ui> |
+| OpenAPI document | <http://localhost:8080/q/openapi> |
+| Aggregate health | <http://localhost:8080/q/health> |
+| Liveness | <http://localhost:8080/q/health/live> |
+| Readiness | <http://localhost:8080/q/health/ready> |
+| Health UI | <http://localhost:8080/q/health-ui/> |
+| Quarkus dev UI | <http://localhost:8080/q/dev-ui> |
+
+There is no bundled HTTP request file because no Discord REST resource exists yet.
+
+## Tests
+
+No persistent project database is used by the integration tests. Testcontainers starts an
+ephemeral PostgreSQL container for the test run.
 
 ```bash
-# Unit tests + integration tests + BDD acceptance tests + architecture tests
 ./mvnw clean verify
 ```
 
-| Type              | Location                                         | Runs with    |
-|-------------------|--------------------------------------------------|--------------|
-| Unit (service)    | `src/test/…/application/ProductServiceTest.java` | `mvn test`   |
-| Architecture      | `src/test/…/architecture/`                       | `mvn test`   |
-| BDD acceptance    | `src/test/resources/features/catalog/`           | `mvn verify` |
-| Technical specs   | `src/test/…/TechnicalSpecsIT.java`               | `mvn verify` |
+| Test type | Location | Runner |
+|---|---|---|
+| DTO and mapper unit tests | `src/test/java/org/acme/catalog/product/` | Surefire |
+| Architecture rules | `src/test/java/org/acme/architecture/` | Surefire + ArchUnit |
+| PostgreSQL mappings | `DiscordPersistenceIT.java` | Failsafe + Testcontainers |
+| Health and OpenAPI | `TechnicalSpecsIT.java` | Failsafe + REST Assured |
 
-## Living Documentation
+## Documentation
+
+The source entry point is [`docs/index.adoc`](docs/index.adoc). Generate HTML and PDF with:
 
 ```bash
-# Build AsciiDoc + UML living documentation
-./mvnw -Pdocs -DskipTests prepare-package
+./mvnw verify -Pdocs
 ```
 
-Generated output:
+Generated files:
 
-- `target/living-docs/living-doc.html`
+- `target/living-docs/html/index.html`
+- `target/living-docs/pdf/index.pdf`
 
-## Run the Full Stack with Docker Compose
+See the [documentation guide](docs/README.md) for the source layout.
 
-```bash
-# Minimal stack: Postgres + application
-docker compose up -d
+## Container images
 
-# Verify
-curl http://localhost:8080/api/v1/products
-```
-
-Copy `.env.example` to `.env` to override default environment variables
-(image tag, ports, credentials).
-
-## Build a Container Image
+The existing Maven profiles remain available:
 
 ```bash
-# Build and tag a JVM image locally via Jib (no Dockerfile needed)
 ./mvnw package -Pjvm -DskipTests
+./mvnw package -Pnative -DskipTests
 ```
 
-## Build a Native Image
-
-```bash
-# Build a native executable via GraalVM
-./mvnw package -Pnative \
-    -DskipTests \
-    -Dquarkus.container-image.tag=1.0.0-native
-```
+Image coordinates still use the historical values during Phase A. In particular,
+`IMAGE_GROUP=brunoe` remains unchanged pending verification.

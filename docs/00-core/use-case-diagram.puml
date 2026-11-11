@@ -1,17 +1,36 @@
 @startuml
-title Product Catalog - Use Case Overview
+title discord-api — Current Foundation and Planned CRUD Scope
 left to right direction
 
-actor "Store Manager" as Manager
+actor "Developer / CI" as Developer
+actor "Future API consumer" as Consumer
 
-rectangle "Product Catalog Service" {
-  usecase "Create Product"
-  usecase "Retrieve Products"
-  usecase "Delete Product"
+rectangle "Implemented foundation" #E8F5E9 {
+  usecase "Validate DTO contracts" as Validate
+  usecase "Map Discord models" as Map
+  usecase "Persist Discord entities\nin PostgreSQL tests" as Persist
+  usecase "Enforce architecture rules" as Architecture
 }
 
-Manager --> "Create Product"
-Manager --> "Retrieve Products"
-Manager --> "Delete Product"
+rectangle "Planned from ticket #17" #FFF3E0 {
+  usecase "User CRUD REST API\n(planned)" as UserCrud
+  usecase "Guild CRUD REST API\n(planned)" as GuildCrud
+  usecase "Role CRUD REST API\n(planned)" as RoleCrud
+  usecase "Channel CRUD REST API\n(planned)" as ChannelCrud
+}
 
+Developer --> Validate
+Developer --> Map
+Developer --> Persist
+Developer --> Architecture
+
+Consumer ..> UserCrud : not implemented
+Consumer ..> GuildCrud : not implemented
+Consumer ..> RoleCrud : not implemented
+Consumer ..> ChannelCrud : not implemented
+
+note bottom of Consumer
+  No Discord CRUD endpoint exists
+  in the current revision.
+end note
 @enduml

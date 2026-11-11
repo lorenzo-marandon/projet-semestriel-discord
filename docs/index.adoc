@@ -1,4 +1,4 @@
-= Product Catalog — Living Documentation
+= discord-api — Technical Documentation
 :toc: left
 :toclevels: 4
 :toc-title: Table of Contents
@@ -7,88 +7,33 @@
 :doctype: book
 :icons: font
 :source-highlighter: rouge
-:revnumber: {project-name} {revnumber}
-:revdate: {revdate}
-:revremark: Auto-generated — do not edit manually
 :experimental:
 :plantuml-format: svg
 :imagesdir: images
-:tip-caption:     💡
-:note-caption:    📌
-:important-caption: ⚠️
-:warning-caption: 🔴
-:caution-caption: 🔥
 
 [.lead]
-This document is the *single source of truth* for the `{project-name}` bounded context. +
-It is *auto-generated* on every `mvn verify -Pdocs` and traces every business requirement
-from vision through design to executable test evidence.
+`discord-api` is a Quarkus and Java 21 project that currently implements the Discord
+domain, PostgreSQL persistence mappings, API DTO contracts, mapping utilities, validation,
+and automated architecture and integration tests.
 
 [IMPORTANT]
 ====
-*Living documentation principle:* if a requirement has no passing test, it does not exist.
-All traceability entries below are harvested from real Cucumber execution results.
+Discord CRUD REST resources and application services are not implemented in the current
+revision. They begin with ticket #17. Diagrams and component descriptions in this document
+therefore distinguish the implemented foundation from planned HTTP functionality.
 ====
-
-'''
-
-// ═══════════════════════════════════════════════════════════════════════════
-// PART I — WHY
-// ═══════════════════════════════════════════════════════════════════════════
-= Part I — WHY: Vision & Scope
-
-== Vision
 
 include::00-core/vision.adoc[]
 
-== Glossary
-
 include::00-core/glossary.adoc[]
 
-== System Context
+== Current and Planned Scope
 
-[NOTE]
-The following diagram shows the actors and capabilities of the Product Catalog bounded context.
+The following diagram separates implemented technical capabilities from the planned CRUD
+use cases. It does not represent any Discord endpoint as currently available.
 
 plantuml::00-core/use-case-diagram.puml[format=svg,align=center]
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PART II — WHAT
-// ═══════════════════════════════════════════════════════════════════════════
-= Part II — WHAT: Functional Scope
-
-// == EPIC-01 — Product Catalog
-
-include::10-epics/EPIC-01-product-catalog/epic.adoc[]
-
-//=== User Stories
-
-[[us-001]]
-//==== US-001 — Product Creation
-
-include::10-epics/EPIC-01-product-catalog/US-001-product-creation.adoc[]
-
-[[us-002]]
-//==== US-002 — Product Retrieval
-
-include::10-epics/EPIC-01-product-catalog/US-002-product-retrieval.adoc[]
-
-[[us-003]]
-///==== US-003 — Product Deletion
-
-include::10-epics/EPIC-01-product-catalog/US-003-product-deletion.adoc[]
-
-//=== Traceability Matrix
-
-include::10-epics/EPIC-01-product-catalog/traceability.adoc[]
-
-== Non-Functional Requirements
-
 include::00-core/NFR.adoc[]
-
-// ═══════════════════════════════════════════════════════════════════════════
-// PART III — HOW
-// ═══════════════════════════════════════════════════════════════════════════
-= Part III — HOW: Architecture
 
 include::00-core/architecture.adoc[]

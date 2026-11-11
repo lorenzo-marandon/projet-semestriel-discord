@@ -1,47 +1,60 @@
 == Vision
 
 [.lead]
-The *Product Catalog* service is the authoritative backend system for managing product
-data within its bounded context. It exposes a stable, versioned REST API for creating,
-retrieving, and deleting products — enforcing strict data integrity and architectural
-boundaries throughout.
+`discord-api` is being built as a backend for Discord-like collaboration data. The current
+revision establishes a tested domain and persistence foundation before exposing CRUD
+operations over HTTP.
 
 === Purpose
 
-The system exists to give backend consumers (store management systems, internal
-microservices, frontend applications) a *predictable, contract-stable* interface to the
-product catalog. Consumers can rely on consistent HTTP semantics, structured error
-responses, and guaranteed persistence.
+The project models users, guilds, roles, and text or voice channels while keeping public
+contracts separate from JPA. This foundation is designed so later REST resources and
+application services can reuse stable DTOs, validation rules, mappers, and repositories.
+
+=== Current Delivery
+
+The following capabilities are implemented:
+
+* framework-independent domain records for `User`, `Guild`, `Role`, `Channel`, and
+  `ChannelType`;
+* JPA entities and UUID-based Panache repositories for PostgreSQL;
+* create, full-update, and response DTO records with Jakarta Bean Validation;
+* dedicated mappers that do not perform repository lookups;
+* generic exception mappers retained for the future API layer;
+* unit, ArchUnit, Health/OpenAPI, and PostgreSQL Testcontainers tests.
+
+=== Planned Delivery
+
+Discord REST resources and application CRUD services are not present. Ticket #17 starts
+that work. Until then, no User, Guild, Role, or Channel HTTP endpoint is part of the
+implemented contract.
+
+=== Identity Transition
+
+The canonical project name is `discord-api`, and the validated future Java package is
+`org.acme.discord`. The Maven artifact ID, current `org.acme.catalog.product` package,
+container image coordinates, database defaults, and `IMAGE_GROUP=brunoe` remain unchanged
+during Phase A.
 
 === Design Principles
 
 [cols="1,4",options="header",stripes=odd]
 |===
-|Principle |Rationale
+|Principle |Application
 
-|*Consistency over feature richness*
-|A narrow, rock-solid API surface is more valuable than a broad, fragile one.
+|Domain isolation
+|Domain records depend only on Java types and remain independent from Quarkus, JPA, and
+REST APIs.
 
-|*Simplicity over flexibility*
-|Each endpoint does exactly one thing; no generic query DSL, no partial updates.
+|Explicit API contracts
+|Create, update, and response DTOs are distinct records. Relations are represented by UUID
+values rather than JPA objects.
 
-|*Explicit over implicit*
-|HTTP status codes, error shapes, and domain exceptions are always named and mapped.
+|Persistence outside mappers
+|Repositories own database access. Mappers transform already available objects and never
+query PostgreSQL.
 
-|*Traceability by default*
-|Every requirement traces to a design decision, an implementation, and a passing test.
-Nothing ships without evidence.
+|Evidence before endpoints
+|Architecture, validation, mapping, and persistence behavior are tested before the CRUD
+HTTP layer is introduced.
 |===
-
-=== Bounded Context Boundary
-
-[NOTE]
-The Product Catalog is a *single bounded context*. It owns the `Product` aggregate root.
-No other service writes to the product table. External consumers read via the REST API only.
-
-.Out of scope (intentionally excluded from v1)
-* Product update / partial patch
-* Bulk import / export
-* Media or digital-asset management
-* Pricing rules or promotions
-* Cross-context event publishing (future epic)

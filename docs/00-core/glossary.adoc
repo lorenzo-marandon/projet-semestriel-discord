@@ -1,128 +1,86 @@
 == Glossary
 
-[.lead]
-Canonical definitions for every term used in this document, the codebase, and the
-feature files. A shared ubiquitous language prevents ambiguity between product,
-development, and test.
-
-=== Domain Terms
+=== Discord Domain
 
 [cols="1,4",options="header",stripes=odd]
 |===
 |Term |Definition
 
-|*Product*
-|The core aggregate root of the bounded context. Represents a sellable item with a
-unique SKU, a human-readable name, a unit price, and a stock quantity. Immutable at
-the domain level (mutations return new instances).
+|*User*
+|A Discord account identified by a UUID, username, display name, and UTC join date. A user
+may belong to multiple guilds and hold multiple roles in persistence.
 
-|*SKU* (Stock Keeping Unit)
-|The business-facing unique identifier for a product. Used as the primary lookup key
-in all API operations. Format: free alphanumeric string (e.g. `TV-1`, `LAP-42`).
+|*Guild*
+|A Discord community identified by a UUID, name, optional description, and UTC creation
+date. It owns roles and channels and has members.
 
-|*Catalog*
-|The collection of all Products managed by this service. The catalog is the primary
-business dataset; it has no explicit aggregate root of its own.
+|*Role*
+|A named, colored, ordered permission grouping that belongs to exactly one guild. Permission
+behavior itself is outside the current implementation.
 
-|*Store Manager*
-|The primary actor who performs create, retrieve, and delete operations through the API.
-Represents any upstream service or human operator with write access.
+|*Channel*
+|An ordered communication space that belongs to exactly one guild.
+
+|*ChannelType*
+|The domain enumeration of supported channel kinds: `TEXT` and `VOICE`.
 |===
 
-=== Application & API Terms
+=== Contracts and Persistence
 
 [cols="1,4",options="header",stripes=odd]
 |===
 |Term |Definition
 
-|*REST API*
-|The HTTP interface exposed by `ProductResource`. Follows Richardson Maturity Level 2:
-resources + HTTP verbs + status codes.
+|*Domain record*
+|An immutable, framework-independent Java record representing the simple fields of a
+Discord resource.
 
-|*DTO* (Data Transfer Object)
-|A plain object used to move data across layer boundaries (API ↔ Application).
-Contains no business logic. Example: `ProductDTO`, `CreateProductRequest`.
-
-|*Endpoint*
-|A specific URL path + HTTP method combination. Example: `POST /api/v1/products`.
-
-|*URI Versioning*
-|The strategy of embedding the API version in the path (`/api/v1/...`) to allow
-non-breaking evolution.
-
-|*Resource*
-|The JAX-RS class that handles HTTP routing and delegates to the service layer.
-Example: `ProductResource`.
-|===
-
-=== Architecture Terms
-
-[cols="1,4",options="header",stripes=odd]
-|===
-|Term |Definition
-
-|*Bounded Context*
-|A semantic boundary within which the domain model is internally consistent.
-The Product Catalog is one bounded context; it does not share its model with others.
-
-|*Hexagonal Architecture (advanced)*
-|The layering strategy: domain core at the centre, application use cases wrapping it,
-infrastructure (persistence, HTTP) at the edges. No dependency flows inward from
-infrastructure toward domain.
-
-|*Onion Architecture*
-|A variant of hexagonal architecture that emphasizes the domain model as the core,
-with layers of services and repositories wrapping it. The domain has no dependencies on
-other layers.
+|*JPA entity*
+|The PostgreSQL persistence representation. Entities contain JPA relationships and must
+not be returned directly by the future REST API.
 
 |*Repository*
-|The infrastructure abstraction for loading and persisting the `ProductEntity`.
-Hides SQL and ORM details. Example: `ProductRepository`.
+|A Panache repository keyed by `UUID` for loading and persisting one entity type.
 
-|*Entity*
-|The JPA persistence model. Mapped to a database table. Distinct from the domain
-`Product` object. Converted via `ProductMapper`.
+|*Create request*
+|A Java record containing client-editable fields required at creation. UUIDs and dates are
+generated server-side; Role and Channel creation additionally carry `guildId`.
 
-|*Service Layer*
-|The application layer (`ProductService`) that orchestrates use cases: validates intent,
-delegates to domain, calls repository, returns DTOs.
+|*Update request*
+|A Java record for a full update of editable fields. It cannot replace IDs, generated
+dates, or existing relationships.
+
+|*Response DTO*
+|A Java record exposing simple fields and relation UUIDs. It never exposes an entity or a
+Hibernate collection.
+
+|*Mapper*
+|A stateless utility that converts between request, domain, persistence, and response
+representations. It performs no repository lookup.
 |===
 
-=== Quality & Testing Terms
+=== Architecture and Testing
 
 [cols="1,4",options="header",stripes=odd]
 |===
 |Term |Definition
 
-|*NFR* (Non-Functional Requirement)
-|A quality constraint that does not describe a business scenario but must be enforced.
-Examples: latency, error-handling, architecture rules.
+|*REST endpoint*
+|An HTTP operation handled by a JAX-RS resource. Discord CRUD endpoints are planned for
+ticket #17 and do not exist in the current revision.
 
-|*BDD* (Behaviour-Driven Development)
-|A specification style using human-readable Given/When/Then scenarios. Scenarios are
-the *acceptance criteria* and the *automated tests* at the same time.
-
-|*Cucumber Feature*
-|A `.feature` file containing one or more BDD scenarios. Each file corresponds to
-exactly one User Story in this project.
-
-|*Cucumber Step Definition*
-|The Java method that implements the logic for a Given/When/Then step. Example:
-`@Given("a product with SKU {string} exists")`. Step definitions can call the API, manipulate test data, or assert responses.
-
-|*Traceability*
-|The explicit chain: Requirement → Design decision → Implementation → Passing test.
-Every row in the traceability matrix must have green evidence from CI.
+|*Bean Validation*
+|Jakarta constraints such as `@NotBlank`, `@NotNull`, and `@PositiveOrZero` applied to
+incoming DTOs and persistence fields.
 
 |*ArchUnit*
-|A Java library for writing executable architecture rules. Used here to enforce
-layer isolation and naming conventions at build time.
+|Executable rules that verify domain isolation, permitted layer dependencies,
+statelessness, and naming conventions.
 
 |*Testcontainers*
-|A Java library that starts real Docker containers (PostgreSQL) during integration
-tests to ensure environment parity with production.
+|The test library that starts an ephemeral PostgreSQL instance for integration tests. It
+does not use the project's persistent database or volume.
 
-|*Living Documentation*
-|Documentation that is generated from, and kept in sync with, the actual codebase and
-test results. This document is an example: it becomes stale the moment tests drift.
+|*Living documentation*
+|AsciiDoc and PlantUML sources rendered to HTML and PDF by the Maven `docs` profile.
 |===

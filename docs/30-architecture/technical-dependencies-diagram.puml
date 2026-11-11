@@ -1,5 +1,5 @@
 @startuml
-title Product Catalog — Technical Dependencies
+title discord-api — Current Technical Dependencies
 left to right direction
 
 skinparam componentStyle rectangle
@@ -8,60 +8,57 @@ skinparam component {
   BorderColor #3366CC
   FontSize 11
 }
-skinparam rectangle {
-  BackgroundColor #F9F9F9
-  BorderColor #AAAAAA
+
+rectangle "Runtime: Quarkus 3.31.2 / Java 21" as Runtime {
+  component "REST + Jackson\nquarkus-rest-jackson" as REST
+  component "CDI\nquarkus-arc" as CDI
+  component "Hibernate ORM + Panache" as ORM
+  component "PostgreSQL JDBC" as JDBC
+  component "Bean Validation" as Validation
+  component "SmallRye OpenAPI" as OpenAPI
+  component "SmallRye Health" as Health
 }
 
-rectangle "Runtime: Quarkus 3.x (JVM)" as Quarkus {
-  component "JAX-RS / REST\n(quarkus-rest-jackson)" as REST
-  component "CDI / ARC\n(quarkus-arc)" as CDI
-  component "Hibernate ORM + Panache\n(quarkus-hibernate-orm-rest-data-panache)" as ORM
-  component "Bean Validation\n(quarkus-hibernate-validator)" as VALIDATION
-  component "SmallRye OpenAPI\n(quarkus-smallrye-openapi)" as OPENAPI
-  component "SmallRye Health\n(quarkus-smallrye-health)" as HEALTH
-  component "REST Client\n(quarkus-rest-client-jackson)" as RESTCLIENT
+rectangle "Implemented code" {
+  component "Generic API error mappers" as API
+  component "DTO records" as DTOs
+  component "Discord domain records" as Domain
+  component "Mappers" as Mappers
+  component "JPA entities + repositories" as Persistence
 }
 
-rectangle "Application Layers" {
-  component "API\n(ProductResource\nExceptionMappers)" as API
-  component "Application\n(ProductService, DTOs)" as APP
-  component "Domain\n(Product — pure Java)" as DOMAIN
-  component "Infrastructure\n(Repository, Entity, Mapper)" as INFRA
-}
+database "PostgreSQL" as Database
 
-database "PostgreSQL 16\n(JDBC: quarkus-jdbc-postgresql)" as DB
-
-rectangle "Test Scope" {
-  component "Cucumber 7\n(quarkus-cucumber + cucumber-java)" as CUCUMBER
-  component "Testcontainers\n(PostgreSQL container)" as TC
-  component "ArchUnit 1.x\n(layer & naming rules)" as ARCHUNIT
-  component "REST Assured\n(HTTP assertions)" as RESTASSURED
-  component "Mockito\n(unit test mocks)" as MOCKITO
+rectangle "Test scope" {
+  component "JUnit 5 / Quarkus Test" as JUnit
+  component "ArchUnit 1.4.1" as ArchUnit
+  component "Testcontainers 1.21.4" as Testcontainers
+  component "REST Assured" as RestAssured
 }
 
 REST --> API
-CDI --> API
-CDI --> APP
-ORM --> INFRA
-VALIDATION --> APP
-OPENAPI --> API
-HEALTH --> API
-RESTCLIENT --> INFRA
+CDI --> Persistence
+ORM --> Persistence
+JDBC --> Database
+Validation --> DTOs
+Validation --> Persistence
+OpenAPI --> Runtime
+Health --> Runtime
 
-API --> APP
-APP --> DOMAIN
-APP --> INFRA
-INFRA --> DB
+DTOs --> Mappers
+Mappers --> Domain
+Mappers --> Persistence
+Persistence --> Database
 
-CUCUMBER --> API : acceptance tests
-TC --> DB : real DB in tests
-ARCHUNIT --> APP : layer rules
-RESTASSURED --> API : HTTP assertions
-MOCKITO --> APP : unit isolation
+JUnit --> DTOs : validation and mapper tests
+ArchUnit --> Domain : isolation rules
+ArchUnit --> API : layer and naming rules
+Testcontainers --> Database : ephemeral integration DB
+RestAssured --> Health : technical endpoint tests
+RestAssured --> OpenAPI : contract availability test
 
-note bottom of DOMAIN
-  Zero runtime framework deps.
-  Depends only on java.base.
+note bottom of API
+  No Discord JAX-RS Resource exists yet.
+  REST CRUD starts with ticket #17.
 end note
 @enduml

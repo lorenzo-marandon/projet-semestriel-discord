@@ -1,58 +1,48 @@
-# Documentation Hub
+# Documentation guide
 
-This folder is organized around **living documentation** with **modular AsciiDoc sources**.
+The canonical documentation source is [`index.adoc`](index.adoc). It describes the
+currently implemented Discord foundation and clearly marks REST CRUD functionality as
+planned for ticket #17.
 
-## Point d'entrée principal
+## Source layout
 
-- Source canonique: [`living-doc.adoc`](living-doc.adoc)
-- Sortie générée: `target/living-docs/living-doc.html`
+- [`00-core/vision.adoc`](00-core/vision.adoc): current purpose and delivery boundary.
+- [`00-core/glossary.adoc`](00-core/glossary.adoc): Discord and architecture vocabulary.
+- [`00-core/NFR.adoc`](00-core/NFR.adoc): verified non-functional requirements.
+- [`00-core/architecture.adoc`](00-core/architecture.adoc): implemented layers and design
+  decisions.
+- [`00-core/use-case-diagram.puml`](00-core/use-case-diagram.puml): implemented foundation
+  versus planned CRUD scope.
+- [`30-architecture/component-diagram.puml`](30-architecture/component-diagram.puml):
+  implemented components.
+- [`30-architecture/domain-class-diagram.puml`](30-architecture/domain-class-diagram.puml):
+  domain and persistence model.
+- [`30-architecture/technical-dependencies-diagram.puml`](30-architecture/technical-dependencies-diagram.puml):
+  runtime and test dependencies.
 
-Structure cible de la page principale:
+The obsolete Product epic, Product sequences, and Cucumber traceability generator were
+removed. No fictional Discord user stories or sequence diagrams replace them.
 
-- Vision (include)
-- Liste Epic + NFR (titres + liens)
-- Diagrammes globaux (use cases, architecture, domain, technical dependencies)
-- Liens vers pages de détail
+## Generate HTML and PDF
 
-Additional detail pages:
-
-- Epic details: [`epics/EPIC-01-details.adoc`](epics/EPIC-01-details.adoc)
-- NFR details: [`epics/NFR-details.adoc`](epics/NFR-details.adoc)
-
-## Génération
+From the repository root:
 
 ```bash
-./mvnw -Pdocs -DskipTests prepare-package
+./mvnw verify -Pdocs
 ```
 
-## Contenu
+The Maven profile processes `docs/index.adoc` and writes:
 
-- Sections AsciiDoc: [`sections/`](sections/)
-- User stories AsciiDoc: [`user-stories/*.adoc`](user-stories/)
-- Sources PlantUML: [`uml/`](uml/)
-- Epics/NFR: [`epics/`](epics/)
+- `target/living-docs/html/index.html`
+- `target/living-docs/pdf/index.pdf`
 
-Pages de détail:
+PlantUML diagrams are rendered by Asciidoctor Diagram. Generated files live under
+`target/` and are intentionally ignored by Git.
 
-- [`epics/EPIC-01-details.adoc`](epics/EPIC-01-details.adoc)
-- [`epics/NFR-details.adoc`](epics/NFR-details.adoc)
+## Maintenance rules
 
-## Conventions
-
-- `docs/living-doc.adoc` = **source canonique** pour la lecture globale.
-- `docs/sections/*.adoc` = **blocs inclus** dans la living doc.
-- `docs/user-stories/*.adoc` = **spécifications par cas d’usage** incluses.
-- `docs/uml/*.puml` = **sources UML** versionnées.
-
-## Quality Checklist
-
-- Keep user stories aligned with executable BDD features in `src/test/resources/features/catalog/`.
-- Keep NFR IDs stable (`NFR-ARCH-*`, `NFR-SEC-*`, `NFR-RELY-*`, `NFR-QA-*`).
-- Prefer additive updates (do not rename IDs used by tests, diagrams, or references).
-- Regenerate docs after any change and inspect `target/living-docs/living-doc.html`.
-
-## UML Naming Convention
-
-- Epic diagrams: `epic-xx-*.puml`
-- User-story diagrams: `us-xxx-*.puml`
-- Global diagrams: `global-*.puml`
+- Document only components and behavior present in the repository.
+- Mark Discord REST resources and services as planned until ticket #17 implements them.
+- Keep PlantUML references relative to `docs/index.adoc`.
+- Run `mvn verify -Pdocs` after changing AsciiDoc or PlantUML sources.
+- Check both generated outputs before committing documentation changes.

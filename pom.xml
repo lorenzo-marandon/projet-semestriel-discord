@@ -39,10 +39,6 @@
         <sonar.maven.plugin.version>5.5.0.6356</sonar.maven.plugin.version>
         <!-- JaCoCo (code coverage) plugin version -->
         <jacoco.maven.plugin.version>0.8.14</jacoco.maven.plugin.version>
-        <!-- Asciidoctor plugin versions (living documentation) -->
-        <asciidoctor.maven.plugin.version>3.2.0</asciidoctor.maven.plugin.version>
-        <asciidoctorj.diagram.version>2.3.1</asciidoctorj.diagram.version>
-
         <!-- For reproducible builds -->
         <project.build.outputTimestamp>2026-02-07T15:00:00Z</project.build.outputTimestamp>
 
@@ -55,8 +51,6 @@
         <docs.output.dir>${project.build.directory}/living-docs</docs.output.dir>
         <docs.images.dir>images</docs.images.dir>
 
-        <!-- GMavenPlus for Groovy scripts in build -->
-        <gmavenplus.plugin.version>4.3.1</gmavenplus.plugin.version>
     </properties>
 
     <!-- Import Quarkus platform BOM for dependency version management -->
@@ -341,34 +335,6 @@
 
             <build>
                 <plugins>
-
-                    <!-- Harvest cucumber.json → _traceability-table.adoc -->
-                    <plugin>
-                        <groupId>org.codehaus.gmavenplus</groupId>
-                        <artifactId>gmavenplus-plugin</artifactId>
-                        <version>${gmavenplus.plugin.version}</version>
-                        <executions>
-                            <execution>
-                                <id>generate-traceability-matrix</id>
-                                <phase>post-integration-test</phase>
-                                <goals>
-                                    <goal>execute</goal>
-                                </goals>
-                                <configuration>
-                                    <scripts>
-                                        <script>file:///${project.basedir}/src/docs/scripts/traceability-generator.groovy</script>
-                                    </scripts>
-                                </configuration>
-                            </execution>
-                        </executions>
-                        <dependencies>
-                            <dependency>
-                                <groupId>org.apache.groovy</groupId>
-                                <artifactId>groovy-json</artifactId>
-                                <version>5.0.6</version>
-                            </dependency>
-                        </dependencies>
-                    </plugin>
 
                     <plugin>
                         <groupId>org.asciidoctor</groupId>

@@ -1,284 +1,114 @@
-== Non-Functional Requirements
+== Verified Non-Functional Requirements
 
 [.lead]
-NFRs are *first-class requirements*. Each is anchored to an implementation reference
-and to an automated test that provides continuous compliance evidence. An NFR without
-a test is an assumption, not a constraint.
+This section records constraints supported by the current code and automated tests. It
+does not claim behavior for the Discord CRUD REST layer planned in ticket #17.
 
-[NOTE]
-====
-*Compliance model:* architecture tests (ArchUnit) validate structural rules on every
-build; integration tests (Cucumber/Failsafe) validate runtime behaviour on every
-`mvn verify`.
-====
-
-'''
-
-=== Technical Architecture & Design
+=== Architecture
 
 [[nfr-arch-01]]
-==== NFR-ARCH-01 — Resource Efficiency
+==== NFR-ARCH-01 — Framework-independent domain
 
-The service *shall* leverage Quarkus (JVM mode) to maintain a low idle memory footprint,
-enabling high container density without vertical scaling.
+The domain package must not depend on Quarkus, JPA, Hibernate, REST, or infrastructure
+classes.
 
 [cols="1,3",options="header"]
 |===
-|Artefact |Role
-|`application.properties`
-|Configures Quarkus memory and thread pool tuning
-|`compose.yml`
-|Defines container resource limits for local parity
+|Evidence |Coverage
+|`DomainIsolationTest`
+|Checks framework independence and prevents domain-to-infrastructure dependencies.
 |===
 
 [[nfr-arch-02]]
-==== NFR-ARCH-02 — Transactional Integrity
+==== NFR-ARCH-02 — Controlled layer dependencies
 
-All state-changing operations *must* persist in PostgreSQL using ACID-compliant
-transactions. No write is considered successful until the transaction commits.
-
-[cols="1,3",options="header"]
-|===
-|Artefact |Role
-|`ProductRepository`
-|Panache repository; all mutations wrapped in `@Transactional`
-|`TechnicalSpecsIT`
-|Validates rollback behaviour and constraint violations
-|===
-
-[[nfr-arch-03]]
-==== NFR-ARCH-03 — Interface Contract
-
-The system *shall* expose a RESTful API at Richardson Maturity Level 2: HTTP resources,
-verbs, and standard status codes (`2xx`, `4xx`, `5xx`). Response bodies are always JSON.
+Dependencies between API, application, domain, and infrastructure packages must satisfy
+the rules encoded in ArchUnit. Application and API classes other than DTO/request records
+must expose only final fields.
 
 [cols="1,3",options="header"]
 |===
-|Artefact |Role
-|`ProductResource`
-|Implements endpoint routing and HTTP semantics
-|`EPIC-01-US-001-product-creation.feature`
-|BDD contract validation for create path
-|===
-
-[[nfr-arch-04]]
-==== NFR-ARCH-04 — Evolutionary API
-
-The API *must* use URI versioning (`/api/v1/...`) to enable non-breaking evolution.
-Clients pin to a version; new versions introduce new paths, not breaking changes.
-
-[cols="1,3",options="header"]
-|===
-|Artefact |Role
-|`ProductResource`
-|All paths prefixed with `/api/v1`
-|`VersionContext`
-|Cucumber context that carries the version prefix into all step assertions
-|===
-
-[[nfr-arch-05]]
-==== NFR-ARCH-05 — Layered Architecture Enforcement
-
-The codebase *must* enforce strict layer isolation: no inward dependency from
-infrastructure toward domain; no direct database access from the API layer.
-This is verified automatically on every build.
-
-[cols="1,3",options="header"]
-|===
-|Artefact |Role
-|`LayerArchitecture`
-|ArchUnit rule set: api → application → domain / infra → domain, never reverse
-|`DomainIsolationTest`
-|ArchUnit: domain package has zero dependencies on Quarkus, JPA, or REST
+|Evidence |Coverage
+|`LayerArchitectureTest`
+|Checks layer access and statelessness rules.
 |`NamingConventionTest`
-|ArchUnit: enforces class naming by layer (Resource, Service, Repository, Entity, Mapper)
+|Checks Resource, Entity, Repository, DTO, Mapper, Filter, and Client suffixes whenever
+matching classes exist.
 |===
 
-'''
+=== Data and Contracts
 
-=== Security & Data Guardrails
+[[nfr-data-01]]
+==== NFR-DATA-01 — PostgreSQL mapping integrity
 
-[[nfr-sec-01]]
-==== NFR-SEC-01 — Schema Validation
-
-Every entry point *must* enforce Jakarta Bean Validation before business logic executes.
-Invalid payloads are rejected at the API boundary with `400 Bad Request`.
+Discord entities and their guild membership, role assignment, role ownership, and channel
+ownership relationships must persist and reload correctly in PostgreSQL.
 
 [cols="1,3",options="header"]
 |===
-|Artefact |Role
-|`CreateProductRequest`
-|`@NotBlank`, `@NotNull`, `@Positive` constraints on all fields
-|`DomainExceptionMapper`
-|Maps `ConstraintViolationException` to structured `400` response
-|===
-
-[[nfr-sec-02]]
-==== NFR-SEC-02 — Data Consistency
-
-The system *must* implement optimistic concurrency control (`@Version`) on the product
-entity to detect and reject lost updates during concurrent stock modifications.
-
-[cols="1,3",options="header"]
-|===
-|Artefact |Role
-|`ProductEntity`
-|`@Version Long version` field managed by Hibernate
-|`EPIC-01-NFR-robustness.feature`
-|Validates concurrent write detection scenario
-|===
-
-[[nfr-sec-03]]
-==== NFR-SEC-03 — Defensive Error Handling
-
-The API *must* implement global exception mapping. Internal stack traces, SQL error
-messages, and Hibernate exception details *must never* be exposed to API consumers.
-
-[cols="1,3",options="header"]
-|===
-|Artefact |Role
-|`GlobalExceptionMapper`
-|Catch-all mapper: logs internally, returns opaque `500` body
-|`ConflictMapper`
-|Maps `OptimisticLockException` → `409 Conflict`
-|`NotFoundMapper`
-|Maps domain `NotFoundException` → `404 Not Found`
-|`JacksonMapper`
-|Maps `JsonProcessingException` → `400 Bad Request`
-|===
-
-'''
-
-=== Reliability & Performance
-
-[[nfr-rely-01]]
-==== NFR-RELY-01 — Latency Threshold
-
-Read operations (`GET`) *should* target a P95 latency ≤ 100 ms under nominal single-node
-load (measured via integration test timing assertions).
-
-[cols="1,3",options="header"]
-|===
-|Artefact |Role
-|`EPIC-01-NFR-robustness.feature`
-|Timing assertion on GET scenarios
-|===
-
-[[nfr-rely-02]]
-==== NFR-RELY-02 — Horizontal Elasticity
-
-The application tier *must* be strictly stateless: no in-process session state, no
-local cache shared across instances. This enables seamless horizontal scaling behind
-a load balancer.
-
-[cols="1,3",options="header"]
-|===
-|Artefact |Role
-|`application.properties`
-|No session configuration; stateless CDI beans only
-|`compose.yml`
-|Multi-replica configuration for local validation
-|===
-
-[[nfr-rely-03]]
-==== NFR-RELY-03 — Fault Tolerance
-
-The system *should* remain responsive for read operations even during intensive write
-locks on unrelated rows, thanks to row-level locking in PostgreSQL.
-
-[cols="1,3",options="header"]
-|===
-|Artefact |Role
-|`EPIC-01-NFR-robustness.feature`
-|Concurrent read/write isolation scenario
-|===
-
-'''
-
-=== Quality & Observability
-
-[[nfr-qa-01]]
-==== NFR-QA-01 — BDD Specification
-
-Every business use case *must* be documented and validated via Cucumber/Gherkin
-scenarios. A use case without a feature file has no acceptance evidence.
-
-[cols="1,3",options="header"]
-|===
-|Artefact |Role
-|`features/catalog/`
-|Feature suite: one file per User Story + one NFR file
-|`CatalogAcceptanceIT`
-|Quarkus integration test runner for all Cucumber features
-|===
-
-[[nfr-qa-02]]
-==== NFR-QA-02 — Environment Parity
-
-Integration tests *must* run against a real PostgreSQL instance via Testcontainers.
-In-memory databases are explicitly forbidden for integration test scope.
-
-[cols="1,3",options="header"]
-|===
-|Artefact |Role
+|Evidence |Coverage
+|`DiscordPersistenceIT`
+|Runs entity and relationship scenarios against an ephemeral PostgreSQL Testcontainer.
 |`PostgreSqlTestResource`
-|Starts and wires a PostgreSQL Testcontainer for the test suite
+|Starts PostgreSQL and supplies the test datasource configuration.
+|===
+
+[[nfr-data-02]]
+==== NFR-DATA-02 — Validated input contracts
+
+Required text, enum, position, and guild identifier fields must be rejected when invalid.
+Server-managed IDs and dates must not be request components.
+
+[cols="1,3",options="header"]
+|===
+|Evidence |Coverage
+|`RequestValidationTest`
+|Checks valid requests, blank values, null values, negative positions, and record
+components.
+|===
+
+[[nfr-data-03]]
+==== NFR-DATA-03 — UTC server dates
+
+User join dates and guild creation dates generated by mappers must represent the supplied
+instant in UTC, independent of the clock's zone. Updates must retain those dates.
+
+[cols="1,3",options="header"]
+|===
+|Evidence |Coverage
+|`UserMapperTest`, `GuildMapperTest`
+|Check UTC and Europe/Paris clocks, default server clocks, and update preservation.
+|===
+
+=== Operations and Documentation
+
+[[nfr-ops-01]]
+==== NFR-OPS-01 — Health and OpenAPI availability
+
+Quarkus must expose liveness, readiness, aggregate health, Health UI, and the generated
+OpenAPI document. The OpenAPI document currently contains only the implemented technical
+surface; Discord CRUD paths are not expected yet.
+
+[cols="1,3",options="header"]
+|===
+|Evidence |Coverage
 |`TechnicalSpecsIT`
-|Validates real DB connectivity and schema constraints
-|===
-
-[[nfr-qa-03]]
-==== NFR-QA-03 — Diagnostic Context
-
-Logging *should* be structured and include a request correlation identifier.
-Health check endpoints *must* be exposed for orchestrator liveness/readiness probes.
-
-[cols="1,3",options="header"]
-|===
-|Artefact |Role
+|Checks `/q/health/live`, `/q/health/ready`, `/q/health-ui/`, and `/q/openapi`.
 |`application.properties`
-|Configures SmallRye Health endpoints (`/q/health/live`, `/q/health/ready`)
-|`GlobalExceptionMapper`
-|Logs full stack trace internally with MDC context before returning opaque response
+|Configures Swagger UI at `/swagger-ui` and stores generated schemas under
+`target/openapi-spec`.
 |===
 
-[[nfr-qa-04]]
-==== NFR-QA-04 — OpenAPI Contract Publication
+[[nfr-ops-02]]
+==== NFR-OPS-02 — Reproducible technical documentation
 
-The service *must* auto-generate and expose an OpenAPI 3.x specification at
-`/q/openapi` on every startup, reflecting the current API surface without manual
-maintenance.
+The Maven `docs` profile must render the canonical `docs/index.adoc` source and its local
+PlantUML diagrams to both HTML and PDF.
 
 [cols="1,3",options="header"]
 |===
-|Artefact |Role
-|`quarkus-smallrye-openapi` dependency
-|Generates `/q/openapi` from JAX-RS annotations at startup
-|`ProductResource`
-|Annotated with `@Operation`, `@APIResponse` for full spec generation
-|===
-
-'''
-
-=== Verification Summary
-
-[cols="1,2,2,1",options="header",stripes=even]
-|===
-|NFR ID |Category |Primary Test Artefact |Type
-
-|NFR-ARCH-01 |Resource Efficiency |`compose.yml` resource limits |Config
-|NFR-ARCH-02 |Transactional Integrity |`TechnicalSpecsIT` |Integration
-|NFR-ARCH-03 |Interface Contract |`EPIC-01-US-001..003.feature` |BDD
-|NFR-ARCH-04 |Evolutionary API |`VersionContext` |BDD
-|NFR-ARCH-05 |Layer Isolation |`LayerArchitecture`, `DomainIsolationTest` |ArchUnit
-|NFR-SEC-01 |Schema Validation |`EPIC-01-US-001.feature` (400 scenario) |BDD
-|NFR-SEC-02 |Data Consistency |`EPIC-01-NFR-robustness.feature` |BDD
-|NFR-SEC-03 |Error Handling |`EPIC-01-US-001..003.feature` (error paths) |BDD
-|NFR-RELY-01 |Latency |`EPIC-01-NFR-robustness.feature` |BDD
-|NFR-RELY-02 |Horizontal Elasticity |`application.properties` |Config
-|NFR-RELY-03 |Fault Tolerance |`EPIC-01-NFR-robustness.feature` |BDD
-|NFR-QA-01 |BDD Coverage |`CatalogAcceptanceIT` |BDD
-|NFR-QA-02 |Environment Parity |`PostgreSqlTestResource` |Integration
-|NFR-QA-03 |Observability |`application.properties` |Config
-|NFR-QA-04 |OpenAPI |SmallRye OpenAPI extension |Config
+|Evidence |Coverage
+|`mvn verify -Pdocs`
+|Produces `target/living-docs/html/index.html` and
+`target/living-docs/pdf/index.pdf`.
 |===

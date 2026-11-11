@@ -1,90 +1,124 @@
 @startuml
-title Product Catalog — Domain & Infrastructure Class Diagram
+title discord-api — Domain, DTO, and Persistence Model
 
 skinparam classAttributeIconSize 0
 skinparam class {
   BackgroundColor #EEF3FF
   BorderColor #3366CC
-  FontSize 12
+  FontSize 11
 }
-skinparam note {
-  BackgroundColor #FFFDE7
-  BorderColor #F9A825
-}
+skinparam packageStyle rectangle
 
 package "domain" #F3F3F3 {
-  class Product {
-    - String sku
-    - String name
-    - BigDecimal price
-    - int stock
-    --
-    + withName(String) : Product
-    + withPrice(BigDecimal) : Product
-    + withStock(int) : Product
-    + isInStock() : boolean
+  class User <<record>> {
+    UUID id
+    String username
+    String displayName
+    LocalDateTime joinedAt
   }
-  note right of Product
-    Immutable aggregate root.
-    No framework imports.
-    Mutations return new instances.
-  end note
+  class Guild <<record>> {
+    UUID id
+    String name
+    String description
+    LocalDateTime createdAt
+  }
+  class Role <<record>> {
+    UUID id
+    String name
+    String color
+    Integer position
+  }
+  class Channel <<record>> {
+    UUID id
+    String name
+    ChannelType type
+    Integer position
+  }
+  enum ChannelType {
+    TEXT
+    VOICE
+  }
+  Channel --> ChannelType
 }
 
-package "application" #F3F3F3 {
-  class ProductService {
-    + create(CreateProductRequest) : ProductDTO
-    + findBySku(String) : Optional<ProductDTO>
-    + findAll() : List<ProductDTO>
-    + delete(String) : void
-  }
-  class ProductDTO {
-    + String sku
-    + String name
-    + BigDecimal price
-    + int stock
-  }
-  class CreateProductRequest {
-    + @NotBlank String sku
-    + @NotBlank String name
-    + @Positive BigDecimal price
-    + @PositiveOrZero int stock
-  }
+package "application.dto" #F3F3F3 {
+  class "UserDTO / GuildDTO" as AggregateDTOs <<response records>>
+  class "RoleDTO / ChannelDTO" as ChildDTOs <<response records>>
+  class "Create*Request" as CreateDTOs <<validated records>>
+  class "Update*Request" as UpdateDTOs <<validated records>>
 }
 
 package "infrastructure.persistence" #F3F3F3 {
-  class ProductEntity {
-    + @Id Long id
-    + @Version Long version
-    + String sku
-    + String name
-    + BigDecimal price
-    + int stock
+  class UserEntity <<JPA entity>> {
+    UUID id
+    String username
+    String displayName
+    LocalDateTime joinedAt
+    Set~GuildEntity~ guilds
+    Set~RoleEntity~ roles
   }
-  class ProductRepository {
-    + findBySku(String) : Optional<ProductEntity>
-    + persist(ProductEntity) : void
-    + listAll() : List<ProductEntity>
-    + deleteById(Long) : boolean
+  class GuildEntity <<JPA entity>> {
+    UUID id
+    String name
+    String description
+    LocalDateTime createdAt
+    Set~RoleEntity~ roles
+    Set~ChannelEntity~ channels
+    Set~UserEntity~ members
   }
-  class ProductMapper {
-    + toDto(ProductEntity) : ProductDTO
-    + toEntity(CreateProductRequest) : ProductEntity
+  class RoleEntity <<JPA entity>> {
+    UUID id
+    String name
+    String color
+    Integer position
+    GuildEntity guild
+    Set~UserEntity~ users
   }
+  class ChannelEntity <<JPA entity>> {
+    UUID id
+    String name
+    ChannelType type
+    Integer position
+    GuildEntity guild
+  }
+  class "UserRepository / GuildRepository\nRoleRepository / ChannelRepository" as Repositories
 }
 
-ProductService --> ProductDTO : returns
-ProductService --> CreateProductRequest : accepts
-ProductService --> ProductRepository : uses
-ProductService ..> Product : applies rules
-ProductRepository --> ProductEntity : manages
-ProductMapper ..> ProductDTO : produces
-ProductMapper ..> ProductEntity : produces
-ProductMapper ..> Product : validates via
+UserEntity "*" -- "*" GuildEntity : guild_members
+UserEntity "*" -- "*" RoleEntity : user_roles
+GuildEntity "1" -- "*" RoleEntity : owns
+GuildEntity "1" -- "*" ChannelEntity : owns
+ChannelEntity --> ChannelType
+Repositories --> UserEntity
+Repositories --> GuildEntity
+Repositories --> RoleEntity
+Repositories --> ChannelEntity
 
-note bottom of ProductEntity
-  @Version prevents lost updates.
-  Distinct from domain Product —
-  never crosses the service boundary.
+package "infrastructure.mapper" #F3F3F3 {
+  class "UserMapper / GuildMapper\nRoleMapper / ChannelMapper" as Mappers
+}
+
+CreateDTOs --> Mappers
+UpdateDTOs --> Mappers
+Mappers ..> User
+Mappers ..> Guild
+Mappers ..> Role
+Mappers ..> Channel
+Mappers --> UserEntity
+Mappers --> GuildEntity
+Mappers --> RoleEntity
+Mappers --> ChannelEntity
+Mappers --> AggregateDTOs
+Mappers --> ChildDTOs
+
+note bottom of AggregateDTOs
+  Relations are exposed as
+  immutable UUID snapshots.
+end note
+
+note bottom of CreateDTOs
+  UUIDs and dates are generated
+  server-side. Role and Channel
+  creation includes guildId.
 end note
 @enduml

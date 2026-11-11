@@ -1,5 +1,5 @@
 @startuml
-title Product Catalog — Component Diagram (C4 Level 2)
+title discord-api — Implemented Component Diagram
 left to right direction
 
 skinparam componentStyle rectangle
@@ -12,56 +12,45 @@ skinparam database {
   BackgroundColor #E8F5E9
   BorderColor #388E3C
 }
-skinparam arrow {
-  Color #555555
-  FontSize 10
+
+package "API layer\norg.acme.catalog.product.api" {
+  component "Generic exception mappers" as Errors
 }
 
-actor "Store Manager" as Client
-
-package "API Layer\norg.acme.catalog.product.api" {
-  component "ProductResource\n(JAX-RS)" as Resource
-  component "ExceptionMappers\n(Global, Conflict, NotFound, Jackson)" as Mappers
+package "Application layer\norg.acme.catalog.product.application" {
+  component "Create request records" as CreateRequests
+  component "Update request records" as UpdateRequests
+  component "Response DTO records" as Responses
 }
 
-package "Application Layer\norg.acme.catalog.product.application" {
-  component "ProductService\n(Use Case Orchestration)" as Service
-  component "ProductDTO\nCreateProductRequest" as DTOs
+package "Domain layer\norg.acme.catalog.product.domain" {
+  component "User, Guild, Role, Channel\nChannelType" as Domain
 }
 
-package "Domain Layer\norg.acme.catalog.product.domain" {
-  component "Product\n(Aggregate Root — pure Java)" as Domain
+package "Infrastructure layer\norg.acme.catalog.product.infrastructure" {
+  component "UserMapper, GuildMapper\nRoleMapper, ChannelMapper" as Mappers
+  component "JPA entities" as Entities
+  component "UUID Panache repositories" as Repositories
 }
 
-package "Infrastructure Layer\norg.acme.catalog.product.infrastructure" {
-  component "ProductRepository\n(Panache)" as Repo
-  component "ProductEntity\n(JPA @Entity)" as Entity
-  component "ProductMapper\n(MapStruct / manual)" as Mapper
-}
+database "PostgreSQL" as Database
 
-database "PostgreSQL\n(Testcontainers in tests)" as DB
+CreateRequests --> Mappers : validated input
+UpdateRequests --> Mappers : editable fields
+Mappers --> Domain : creates / reads records
+Mappers --> Entities : creates / updates / reads
+Mappers --> Responses : immutable API snapshots
+Repositories --> Entities : manages
+Entities --> Database : Hibernate ORM / JDBC
 
-Client --> Resource : HTTP requests\n(JSON/REST)
-Resource --> Mappers : exception handling
-Resource --> Service : delegates use cases
-Service --> DTOs : input / output
-Service --> Domain : business rules
-Service --> Repo : persistence
-Repo --> Entity : JPA operations
-Entity --> DB : SQL / ACID
-Mapper --> Entity : maps from request
-Mapper --> DTOs : maps to response
-Mapper ..> Domain : validates through
-
-note bottom of Domain
-  Zero dependencies on
-  Quarkus / JPA / REST
-  (enforced by ArchUnit)
+note right of Errors
+  Implemented infrastructure for
+  future REST resources.
 end note
 
-note bottom of DB
-  Real PostgreSQL in
-  integration tests via
-  Testcontainers
+note bottom of Responses
+  No Discord Resource or Service
+  is implemented yet.
+  CRUD HTTP work starts at ticket #17.
 end note
 @enduml
