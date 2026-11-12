@@ -4,6 +4,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
+import org.acme.discord.application.dto.ErrorDTO;
 
 /**
  * Maps {@link IllegalStateException} to an HTTP 409 Conflict response.
@@ -15,8 +16,8 @@ public class ConflictMapper implements ExceptionMapper<IllegalStateException> {
     @Override
     public Response toResponse(IllegalStateException ex) {
         return Response.status(Response.Status.CONFLICT)
-                .entity(ex.getMessage()) // Send the business rule violation message to the client
-                .type(MediaType.TEXT_PLAIN)
+                .entity(ErrorDTO.of("USERNAME_ALREADY_EXISTS", ex.getMessage()))
+                .type(MediaType.APPLICATION_JSON)
                 .build();
     }
 }
