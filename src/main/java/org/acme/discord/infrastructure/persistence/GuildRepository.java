@@ -24,6 +24,16 @@ public class GuildRepository implements PanacheRepositoryBase<GuildEntity, UUID>
     }
 
     /**
+     * Loads a guild with a shared lock for creating dependent resources.
+     *
+     * @param id guild identifier
+     * @return matching locked guild, if present
+     */
+    public Optional<GuildEntity> findByIdForRead(UUID id) {
+        return findByIdOptional(id, LockModeType.PESSIMISTIC_READ);
+    }
+
+    /**
      * Checks whether a guild has at least one member without loading the collection.
      *
      * @param guildId guild identifier
