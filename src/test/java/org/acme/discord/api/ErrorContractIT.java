@@ -12,8 +12,10 @@ import java.util.UUID;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @QuarkusTest
 @QuarkusTestResource(PostgreSqlTestResource.class)
@@ -38,6 +40,22 @@ class ErrorContractIT {
 
         given().contentType("text/plain").body("not-json").post("/api/users")
                 .then().statusCode(415);
+    }
+
+    @Test
+    void shouldReturnClientSafeErrorForUnexpectedHttpFailure() {
+        Response response = given().get("/api/test/internal-error");
+
+        assertError(response, 500, "INTERNAL_SERVER_ERROR");
+        response.then()
+                .body("message", equalTo("An unexpected error occurred. Please contact support."))
+                .body("violations", hasSize(0));
+        String body = response.asString().toLowerCase();
+        assertFalse(body.contains("illegalstateexception"));
+        assertFalse(body.contains("sql"));
+        assertFalse(body.contains("password"));
+        assertFalse(body.contains("secret"));
+        assertFalse(body.contains("internalerrortestresource"));
     }
 
     private static void assertError(Response response, int status, String code) {
