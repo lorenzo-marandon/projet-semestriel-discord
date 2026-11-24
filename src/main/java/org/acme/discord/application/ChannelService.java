@@ -10,6 +10,7 @@ import org.acme.discord.application.dto.PageDTO;
 import org.acme.discord.application.dto.usecases.CreateChannelRequest;
 import org.acme.discord.application.dto.usecases.UpdateChannelRequest;
 import org.acme.discord.application.exception.ChannelNotFoundException;
+import org.acme.discord.application.exception.InvalidRequestException;
 import org.acme.discord.application.exception.GuildNotFoundException;
 import org.acme.discord.infrastructure.mapper.ChannelMapper;
 import org.acme.discord.infrastructure.persistence.ChannelEntity;
@@ -114,10 +115,10 @@ public class ChannelService {
 
     private static void validatePagination(int page, int size) {
         if (page < 0) {
-            throw new IllegalArgumentException("Page must be greater than or equal to 0");
+            throw new InvalidRequestException("Page must be greater than or equal to 0");
         }
         if (size < 1 || size > 100) {
-            throw new IllegalArgumentException("Size must be between 1 and 100");
+            throw new InvalidRequestException("Size must be between 1 and 100");
         }
     }
 }

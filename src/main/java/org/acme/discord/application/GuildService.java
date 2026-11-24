@@ -12,6 +12,7 @@ import org.acme.discord.application.dto.usecases.CreateGuildRequest;
 import org.acme.discord.application.dto.usecases.UpdateGuildRequest;
 import org.acme.discord.application.exception.GuildNotEmptyException;
 import org.acme.discord.application.exception.GuildNotFoundException;
+import org.acme.discord.application.exception.InvalidRequestException;
 import org.acme.discord.infrastructure.mapper.GuildMapper;
 import org.acme.discord.infrastructure.persistence.GuildEntity;
 import org.acme.discord.infrastructure.persistence.GuildRepository;
@@ -125,10 +126,10 @@ public class GuildService {
 
     private static void validatePagination(int page, int size) {
         if (page < 0) {
-            throw new IllegalArgumentException("Page must be greater than or equal to 0");
+            throw new InvalidRequestException("Page must be greater than or equal to 0");
         }
         if (size < 1 || size > 100) {
-            throw new IllegalArgumentException("Size must be between 1 and 100");
+            throw new InvalidRequestException("Size must be between 1 and 100");
         }
     }
 

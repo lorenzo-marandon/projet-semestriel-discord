@@ -93,10 +93,17 @@ class UserResourceIT {
 
     @Test
     void shouldRejectInvalidAndDuplicateCreationWithJsonErrors() {
-        assertError(given()
+        Response invalid = given()
                 .contentType("application/json")
                 .body(Map.of("username", " ", "displayName", ""))
-                .post("/api/users"), 400, "VALIDATION_ERROR");
+                .post("/api/users");
+        assertError(invalid, 400, "VALIDATION_ERROR");
+        invalid.then()
+                .body("message", equalTo("Request validation failed"))
+                .body("violations[0].field", equalTo("displayName"))
+                .body("violations[0].message", equalTo("Display name is required"))
+                .body("violations[1].field", equalTo("username"))
+                .body("violations[1].message", equalTo("Username is required"));
 
         createUser("duplicate", "First");
 
@@ -365,7 +372,8 @@ class UserResourceIT {
                 .contentType("application/json")
                 .body("code", equalTo(code))
                 .body("message", not(nullValue()))
-                .body("timestamp", not(nullValue()));
+                .body("timestamp", not(nullValue()))
+                .body("violations", not(nullValue()));
         LocalDateTime.parse(response.path("timestamp"));
     }
 

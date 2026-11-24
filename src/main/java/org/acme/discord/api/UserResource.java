@@ -24,6 +24,7 @@ import org.acme.discord.application.dto.RoleDTO;
 import org.acme.discord.application.dto.UserDTO;
 import org.acme.discord.application.dto.usecases.CreateUserRequest;
 import org.acme.discord.application.dto.usecases.UpdateUserRequest;
+import org.acme.discord.application.exception.InvalidRequestException;
 
 import java.net.URI;
 import java.util.List;
@@ -111,7 +112,7 @@ public class UserResource {
         try {
             return UUID.fromString(value);
         } catch (IllegalArgumentException exception) {
-            throw new IllegalArgumentException("Invalid user id");
+            throw new InvalidRequestException("Invalid user id");
         }
     }
 
@@ -119,7 +120,7 @@ public class UserResource {
         try {
             return UUID.fromString(value);
         } catch (IllegalArgumentException exception) {
-            throw new IllegalArgumentException("Invalid role id");
+            throw new InvalidRequestException("Invalid role id");
         }
     }
 
@@ -127,7 +128,7 @@ public class UserResource {
         try {
             return Integer.parseInt(value);
         } catch (NumberFormatException exception) {
-            throw new IllegalArgumentException(parameterName + " must be an integer");
+            throw new InvalidRequestException(parameterName + " must be an integer");
         }
     }
 }

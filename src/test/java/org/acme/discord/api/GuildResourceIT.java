@@ -115,8 +115,12 @@ class GuildResourceIT {
 
     @Test
     void shouldRejectInvalidNamesAndMalformedJson() {
-        assertError(given().contentType("application/json").body("{}").post("/api/guilds"),
-                400, "VALIDATION_ERROR");
+        Response missingName = given().contentType("application/json").body("{}").post("/api/guilds");
+        assertError(missingName, 400, "VALIDATION_ERROR");
+        missingName.then()
+                .body("message", equalTo("Request validation failed"))
+                .body("violations[0].field", equalTo("name"))
+                .body("violations[0].message", equalTo("Guild name is required"));
         assertError(given().contentType("application/json")
                         .body("{\"name\":null,\"description\":null}").post("/api/guilds"),
                 400, "VALIDATION_ERROR");
@@ -452,7 +456,8 @@ class GuildResourceIT {
                 .contentType("application/json")
                 .body("code", equalTo(code))
                 .body("message", not(nullValue()))
-                .body("timestamp", not(nullValue()));
+                .body("timestamp", not(nullValue()))
+                .body("violations", not(nullValue()));
         LocalDateTime.parse(response.path("timestamp"));
         assertFalse(response.asString().toLowerCase().contains("sql"));
     }

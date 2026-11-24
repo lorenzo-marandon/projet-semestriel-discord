@@ -22,6 +22,7 @@ import org.acme.discord.application.dto.ChannelDTO;
 import org.acme.discord.application.dto.PageDTO;
 import org.acme.discord.application.dto.usecases.CreateChannelRequest;
 import org.acme.discord.application.dto.usecases.UpdateChannelRequest;
+import org.acme.discord.application.exception.InvalidRequestException;
 
 import java.net.URI;
 import java.util.UUID;
@@ -82,7 +83,7 @@ public class ChannelResource {
         try {
             return UUID.fromString(value);
         } catch (IllegalArgumentException exception) {
-            throw new IllegalArgumentException("Invalid channel id");
+            throw new InvalidRequestException("Invalid channel id");
         }
     }
 
@@ -90,7 +91,7 @@ public class ChannelResource {
         try {
             return Integer.parseInt(value);
         } catch (NumberFormatException exception) {
-            throw new IllegalArgumentException(parameterName + " must be an integer");
+            throw new InvalidRequestException(parameterName + " must be an integer");
         }
     }
 }

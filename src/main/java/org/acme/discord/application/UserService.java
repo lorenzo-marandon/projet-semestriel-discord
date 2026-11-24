@@ -10,6 +10,9 @@ import org.acme.discord.application.dto.PageDTO;
 import org.acme.discord.application.dto.UserDTO;
 import org.acme.discord.application.dto.usecases.CreateUserRequest;
 import org.acme.discord.application.dto.usecases.UpdateUserRequest;
+import org.acme.discord.application.exception.UserNotFoundException;
+import org.acme.discord.application.exception.UsernameConflictException;
+import org.acme.discord.application.exception.InvalidRequestException;
 import org.acme.discord.infrastructure.mapper.UserMapper;
 import org.acme.discord.infrastructure.persistence.GuildEntity;
 import org.acme.discord.infrastructure.persistence.RoleEntity;
@@ -18,7 +21,6 @@ import org.acme.discord.infrastructure.persistence.UserRepository;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
 
@@ -28,8 +30,6 @@ import java.util.UUID;
 @ApplicationScoped
 public class  UserService {
 
-    private static final String USER_NOT_FOUND_MESSAGE = "User not found";
-    private static final String USERNAME_CONFLICT_MESSAGE = "Username is already in use";
     private static final String UNIQUE_VIOLATION_SQL_STATE = "23505";
 
     private final UserRepository userRepository;
@@ -116,7 +116,7 @@ public class  UserService {
     @Transactional
     public void delete(UUID id) {
         UserEntity entity = userRepository.findByIdForUpdate(id)
-                .orElseThrow(() -> new NoSuchElementException(USER_NOT_FOUND_MESSAGE));
+                .orElseThrow(UserNotFoundException::new);
         Set<GuildEntity> guilds = Set.copyOf(entity.getGuilds());
         Set<RoleEntity> roles = Set.copyOf(entity.getRoles());
 
@@ -132,7 +132,7 @@ public class  UserService {
 
     private UserEntity findEntity(UUID id) {
         return userRepository.findByIdOptional(id)
-                .orElseThrow(() -> new NoSuchElementException(USER_NOT_FOUND_MESSAGE));
+                .orElseThrow(UserNotFoundException::new);
     }
 
     private void ensureUsernameAvailable(String username) {
@@ -143,15 +143,15 @@ public class  UserService {
 
     private static void validatePagination(int page, int size) {
         if (page < 0) {
-            throw new IllegalArgumentException("Page must be greater than or equal to 0");
+            throw new InvalidRequestException("Page must be greater than or equal to 0");
         }
         if (size < 1 || size > 100) {
-            throw new IllegalArgumentException("Size must be between 1 and 100");
+            throw new InvalidRequestException("Size must be between 1 and 100");
         }
     }
 
-    private static IllegalStateException usernameConflict() {
-        return new IllegalStateException(USERNAME_CONFLICT_MESSAGE);
+    private static UsernameConflictException usernameConflict() {
+        return new UsernameConflictException();
     }
 
     private static RuntimeException translateUniqueViolation(PersistenceException exception) {

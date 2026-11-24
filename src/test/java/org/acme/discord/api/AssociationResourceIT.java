@@ -115,6 +115,14 @@ class AssociationResourceIT {
     }
 
     @Test
+    void shouldRejectMalformedAssociationIdentifiers() {
+        assertError(given().put("/api/guilds/not-a-uuid/members/not-a-uuid"),
+                400, "INVALID_REQUEST");
+        assertError(given().put("/api/users/not-a-uuid/roles/not-a-uuid"),
+                400, "INVALID_REQUEST");
+    }
+
+    @Test
     void shouldAssignRolePersistOnceAndListDto() {
         UUID guildId = persistGuild("Role Guild");
         UUID userId = persistUser("role-member", "Role Member");
@@ -341,7 +349,8 @@ class AssociationResourceIT {
                 .contentType("application/json")
                 .body("code", equalTo(code))
                 .body("message", not(nullValue()))
-                .body("timestamp", not(nullValue()));
+                .body("timestamp", not(nullValue()))
+                .body("violations", not(nullValue()));
     }
 
     @FunctionalInterface

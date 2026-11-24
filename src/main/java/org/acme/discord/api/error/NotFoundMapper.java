@@ -1,25 +1,20 @@
 package org.acme.discord.api.error;
 
-import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
-import org.acme.discord.application.dto.ErrorDTO;
-import java.util.NoSuchElementException;
+import org.acme.discord.application.exception.UserNotFoundException;
 
 /**
- * Maps {@link NoSuchElementException} to an HTTP 404 Not Found.
- * * Pedagogical Point: The Service returns an Optional or throws this
- * standard Java exception. This mapper bridges that "Pure Java" logic back to
- * REST.
+ * Maps a missing user to an HTTP 404 Not Found response.
  */
 @Provider
-public class NotFoundMapper implements ExceptionMapper<NoSuchElementException> {
+public class NotFoundMapper implements ExceptionMapper<UserNotFoundException> {
     @Override
-    public Response toResponse(NoSuchElementException exception) {
-        return Response.status(Response.Status.NOT_FOUND)
-                .entity(ErrorDTO.of("USER_NOT_FOUND", exception.getMessage()))
-                .type(MediaType.APPLICATION_JSON)
-                .build();
+    public Response toResponse(UserNotFoundException exception) {
+        return ErrorResponses.of(
+                Response.Status.NOT_FOUND,
+                "USER_NOT_FOUND",
+                exception.getMessage());
     }
 }

@@ -7,6 +7,7 @@ import org.acme.discord.application.dto.UserDTO;
 import org.acme.discord.application.exception.GuildNotFoundException;
 import org.acme.discord.application.exception.RoleMembershipConflictException;
 import org.acme.discord.application.exception.RoleNotFoundException;
+import org.acme.discord.application.exception.UserNotFoundException;
 import org.acme.discord.infrastructure.mapper.RoleMapper;
 import org.acme.discord.infrastructure.mapper.UserMapper;
 import org.acme.discord.infrastructure.persistence.GuildEntity;
@@ -17,7 +18,6 @@ import org.acme.discord.infrastructure.persistence.UserEntity;
 import org.acme.discord.infrastructure.persistence.UserRepository;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -27,8 +27,6 @@ import java.util.stream.Collectors;
  */
 @ApplicationScoped
 public class AssociationService {
-
-    private static final String USER_NOT_FOUND_MESSAGE = "User not found";
 
     private final UserRepository userRepository;
     private final GuildRepository guildRepository;
@@ -153,7 +151,7 @@ public class AssociationService {
     @Transactional
     public List<RoleDTO> listRoles(UUID userId) {
         if (userRepository.findByIdOptional(userId).isEmpty()) {
-            throw userNotFound();
+            throw new UserNotFoundException();
         }
         return roleRepository.listByUserId(userId).stream()
                 .map(RoleMapper::toDto)
@@ -162,10 +160,6 @@ public class AssociationService {
 
     private UserEntity findUserForUpdate(UUID userId) {
         return userRepository.findByIdForUpdate(userId)
-                .orElseThrow(AssociationService::userNotFound);
-    }
-
-    private static NoSuchElementException userNotFound() {
-        return new NoSuchElementException(USER_NOT_FOUND_MESSAGE);
+                .orElseThrow(UserNotFoundException::new);
     }
 }

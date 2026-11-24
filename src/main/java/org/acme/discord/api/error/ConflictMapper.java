@@ -1,23 +1,20 @@
 package org.acme.discord.api.error;
 
-import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
-import org.acme.discord.application.dto.ErrorDTO;
+import org.acme.discord.application.exception.UsernameConflictException;
 
 /**
- * Maps {@link IllegalStateException} to an HTTP 409 Conflict response.
- * A service can throw this standard Java exception when a business rule is
- * violated.
+ * Maps a duplicate username to an HTTP 409 Conflict response.
  */
 @Provider
-public class ConflictMapper implements ExceptionMapper<IllegalStateException> {
+public class ConflictMapper implements ExceptionMapper<UsernameConflictException> {
     @Override
-    public Response toResponse(IllegalStateException ex) {
-        return Response.status(Response.Status.CONFLICT)
-                .entity(ErrorDTO.of("USERNAME_ALREADY_EXISTS", ex.getMessage()))
-                .type(MediaType.APPLICATION_JSON)
-                .build();
+    public Response toResponse(UsernameConflictException exception) {
+        return ErrorResponses.of(
+                Response.Status.CONFLICT,
+                "USERNAME_ALREADY_EXISTS",
+                exception.getMessage());
     }
 }

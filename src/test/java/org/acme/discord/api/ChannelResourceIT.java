@@ -102,10 +102,15 @@ class ChannelResourceIT {
     void shouldRejectInvalidCreateFields() {
         UUID guildId = persistGuild("Validation Guild");
 
-        assertError(given().contentType("application/json")
+        Response missingFields = given().contentType("application/json")
                         .body("{\"guildId\":\"" + guildId + "\"}")
-                        .post("/api/channels"),
-                400, "VALIDATION_ERROR");
+                        .post("/api/channels");
+        assertError(missingFields, 400, "VALIDATION_ERROR");
+        missingFields.then()
+                .body("message", equalTo("Request validation failed"))
+                .body("violations[0].field", equalTo("name"))
+                .body("violations[1].field", equalTo("position"))
+                .body("violations[2].field", equalTo("type"));
         assertError(given().contentType("application/json")
                         .body("{\"name\":null,\"type\":null,\"position\":null,\"guildId\":null}")
                         .post("/api/channels"),
@@ -422,7 +427,8 @@ class ChannelResourceIT {
                 .contentType("application/json")
                 .body("code", equalTo(code))
                 .body("message", not(nullValue()))
-                .body("timestamp", not(nullValue()));
+                .body("timestamp", not(nullValue()))
+                .body("violations", not(nullValue()));
         LocalDateTime.parse(response.path("timestamp"));
         assertFalse(response.asString().toLowerCase().contains("sql"));
     }

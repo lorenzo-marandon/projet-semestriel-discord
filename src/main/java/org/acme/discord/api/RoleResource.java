@@ -22,6 +22,7 @@ import org.acme.discord.application.dto.PageDTO;
 import org.acme.discord.application.dto.RoleDTO;
 import org.acme.discord.application.dto.usecases.CreateRoleRequest;
 import org.acme.discord.application.dto.usecases.UpdateRoleRequest;
+import org.acme.discord.application.exception.InvalidRequestException;
 
 import java.net.URI;
 import java.util.UUID;
@@ -82,7 +83,7 @@ public class RoleResource {
         try {
             return UUID.fromString(value);
         } catch (IllegalArgumentException exception) {
-            throw new IllegalArgumentException("Invalid role id");
+            throw new InvalidRequestException("Invalid role id");
         }
     }
 
@@ -90,7 +91,7 @@ public class RoleResource {
         try {
             return Integer.parseInt(value);
         } catch (NumberFormatException exception) {
-            throw new IllegalArgumentException(parameterName + " must be an integer");
+            throw new InvalidRequestException(parameterName + " must be an integer");
         }
     }
 }
