@@ -14,13 +14,16 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(description = "Request object to update an existing channel")
 public record UpdateChannelRequest(
         @NotBlank(message = "Channel name is required")
+        @Schema(description = "Channel name", example = "announcements")
         String name,
 
         @NotNull(message = "Channel type is required")
         @JsonDeserialize(using = StrictChannelTypeDeserializer.class)
+        @Schema(description = "Channel type", enumeration = {"TEXT", "VOICE"}, example = "TEXT")
         ChannelType type,
 
         @NotNull(message = "Channel position is required")
         @PositiveOrZero(message = "Channel position cannot be negative")
+        @Schema(description = "Non-negative display position", example = "1", minimum = "0")
         Integer position) {
 }

@@ -16,10 +16,15 @@ import java.util.List;
  */
 @Schema(description = "Paginated API response")
 public record PageDTO<T>(
+        @Schema(description = "Items in the requested page")
         List<T> items,
+        @Schema(description = "Zero-based page index", example = "0", minimum = "0")
         int page,
+        @Schema(description = "Requested maximum number of items", example = "20", minimum = "1", maximum = "100")
         int size,
+        @Schema(description = "Total number of items matching the filters", example = "42", minimum = "0")
         long totalItems,
+        @Schema(description = "Total number of pages for the requested size", example = "3", minimum = "0")
         long totalPages) {
 
     public PageDTO {

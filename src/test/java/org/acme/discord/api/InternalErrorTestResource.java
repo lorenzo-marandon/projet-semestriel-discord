@@ -4,6 +4,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 
 /**
  * Test-only resource used to exercise the complete unexpected-error HTTP chain.
@@ -13,6 +14,7 @@ import jakarta.ws.rs.core.MediaType;
 public class InternalErrorTestResource {
 
     @GET
+    @Operation(hidden = true)
     public void fail() {
         throw new IllegalStateException("SQL password=integration-test-secret");
     }
