@@ -19,6 +19,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import org.acme.discord.application.RoleService;
 import org.acme.discord.application.dto.PageDTO;
+import org.acme.discord.application.dto.PageRequestDTO;
 import org.acme.discord.application.dto.RoleDTO;
 import org.acme.discord.application.dto.usecases.CreateRoleRequest;
 import org.acme.discord.application.dto.usecases.UpdateRoleRequest;
@@ -59,9 +60,13 @@ public class RoleResource {
 
     @GET
     public PageDTO<RoleDTO> list(
-            @DefaultValue("0") @QueryParam("page") String page,
-            @DefaultValue("20") @QueryParam("size") String size) {
-        return roleService.list(parseInteger(page, "page"), parseInteger(size, "size"));
+            @DefaultValue(QueryParameters.DEFAULT_PAGE) @QueryParam("page") String page,
+            @DefaultValue(QueryParameters.DEFAULT_SIZE) @QueryParam("size") String size,
+            @QueryParam("guildId") String guildId,
+            @Context UriInfo uriInfo) {
+        PageRequestDTO pagination = QueryParameters.pagination(page, size);
+        return roleService.list(pagination, QueryParameters.optionalUuid(
+                guildId, "guildId", uriInfo.getQueryParameters().containsKey("guildId")));
     }
 
     @PUT
@@ -87,11 +92,4 @@ public class RoleResource {
         }
     }
 
-    private static int parseInteger(String value, String parameterName) {
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException exception) {
-            throw new InvalidRequestException(parameterName + " must be an integer");
-        }
-    }
 }

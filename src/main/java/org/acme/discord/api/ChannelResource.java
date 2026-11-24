@@ -20,6 +20,7 @@ import jakarta.ws.rs.core.UriInfo;
 import org.acme.discord.application.ChannelService;
 import org.acme.discord.application.dto.ChannelDTO;
 import org.acme.discord.application.dto.PageDTO;
+import org.acme.discord.application.dto.PageRequestDTO;
 import org.acme.discord.application.dto.usecases.CreateChannelRequest;
 import org.acme.discord.application.dto.usecases.UpdateChannelRequest;
 import org.acme.discord.application.exception.InvalidRequestException;
@@ -59,9 +60,18 @@ public class ChannelResource {
 
     @GET
     public PageDTO<ChannelDTO> list(
-            @DefaultValue("0") @QueryParam("page") String page,
-            @DefaultValue("20") @QueryParam("size") String size) {
-        return channelService.list(parseInteger(page, "page"), parseInteger(size, "size"));
+            @DefaultValue(QueryParameters.DEFAULT_PAGE) @QueryParam("page") String page,
+            @DefaultValue(QueryParameters.DEFAULT_SIZE) @QueryParam("size") String size,
+            @QueryParam("guildId") String guildId,
+            @QueryParam("type") String type,
+            @Context UriInfo uriInfo) {
+        PageRequestDTO pagination = QueryParameters.pagination(page, size);
+        return channelService.list(
+                pagination,
+                QueryParameters.optionalUuid(
+                        guildId, "guildId", uriInfo.getQueryParameters().containsKey("guildId")),
+                QueryParameters.optionalText(
+                        type, "type", uriInfo.getQueryParameters().containsKey("type")));
     }
 
     @PUT
@@ -87,11 +97,4 @@ public class ChannelResource {
         }
     }
 
-    private static int parseInteger(String value, String parameterName) {
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException exception) {
-            throw new InvalidRequestException(parameterName + " must be an integer");
-        }
-    }
 }

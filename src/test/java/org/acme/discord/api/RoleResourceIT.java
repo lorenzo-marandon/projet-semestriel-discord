@@ -202,6 +202,37 @@ class RoleResourceIT {
     }
 
     @Test
+    void shouldFilterRolesByGuildBeforePagination() {
+        UUID firstGuild = persistGuild("Filtered Roles Guild");
+        UUID secondGuild = persistGuild("Other Roles Guild");
+        UUID firstRole = persistRole("First", "blue", 1, firstGuild);
+        UUID secondRole = persistRole("Second", "green", 2, firstGuild);
+        persistRole("Other", "red", 0, secondGuild);
+
+        given().queryParam("guildId", firstGuild).queryParam("page", 0).queryParam("size", 1)
+                .get("/api/roles")
+                .then().statusCode(200)
+                .body("items", hasSize(1))
+                .body("items[0].id", equalTo(firstRole.toString()))
+                .body("totalItems", equalTo(2))
+                .body("totalPages", equalTo(2));
+
+        given().queryParam("guildId", firstGuild).queryParam("page", 1).queryParam("size", 1)
+                .get("/api/roles")
+                .then().statusCode(200)
+                .body("items[0].id", equalTo(secondRole.toString()));
+
+        given().queryParam("guildId", UUID.randomUUID()).get("/api/roles")
+                .then().statusCode(200).body("items", hasSize(0)).body("totalItems", equalTo(0));
+        assertError(given().queryParam("guildId", "not-a-uuid").get("/api/roles"),
+                400, "INVALID_REQUEST");
+        assertError(given().queryParam("guildId", "").get("/api/roles"),
+                400, "INVALID_REQUEST");
+        assertError(given().queryParam("guildId", "   ").get("/api/roles"),
+                400, "INVALID_REQUEST");
+    }
+
+    @Test
     void shouldUpdateEditableFieldsAndPreserveIdentifierGuildAndAssignments() {
         AssignedRole fixture = persistAssignedRole();
 

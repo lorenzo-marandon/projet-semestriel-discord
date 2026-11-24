@@ -20,6 +20,7 @@ import jakarta.ws.rs.core.UriInfo;
 import org.acme.discord.application.AssociationService;
 import org.acme.discord.application.UserService;
 import org.acme.discord.application.dto.PageDTO;
+import org.acme.discord.application.dto.PageRequestDTO;
 import org.acme.discord.application.dto.RoleDTO;
 import org.acme.discord.application.dto.UserDTO;
 import org.acme.discord.application.dto.usecases.CreateUserRequest;
@@ -27,7 +28,6 @@ import org.acme.discord.application.dto.usecases.UpdateUserRequest;
 import org.acme.discord.application.exception.InvalidRequestException;
 
 import java.net.URI;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -64,9 +64,13 @@ public class UserResource {
 
     @GET
     public PageDTO<UserDTO> list(
-            @DefaultValue("0") @QueryParam("page") String page,
-            @DefaultValue("20") @QueryParam("size") String size) {
-        return userService.list(parseInteger(page, "page"), parseInteger(size, "size"));
+            @DefaultValue(QueryParameters.DEFAULT_PAGE) @QueryParam("page") String page,
+            @DefaultValue(QueryParameters.DEFAULT_SIZE) @QueryParam("size") String size,
+            @QueryParam("username") String username,
+            @Context UriInfo uriInfo) {
+        PageRequestDTO pagination = QueryParameters.pagination(page, size);
+        return userService.list(pagination, QueryParameters.optionalText(
+                username, "username", uriInfo.getQueryParameters().containsKey("username")));
     }
 
     @PUT
@@ -104,8 +108,12 @@ public class UserResource {
 
     @GET
     @Path("/{userId}/roles")
-    public List<RoleDTO> listRoles(@PathParam("userId") String userId) {
-        return associationService.listRoles(parseUserId(userId));
+    public PageDTO<RoleDTO> listRoles(
+            @PathParam("userId") String userId,
+            @DefaultValue(QueryParameters.DEFAULT_PAGE) @QueryParam("page") String page,
+            @DefaultValue(QueryParameters.DEFAULT_SIZE) @QueryParam("size") String size) {
+        return associationService.listRoles(
+                parseUserId(userId), QueryParameters.pagination(page, size));
     }
 
     private static UUID parseUserId(String value) {
@@ -124,11 +132,4 @@ public class UserResource {
         }
     }
 
-    private static int parseInteger(String value, String parameterName) {
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException exception) {
-            throw new InvalidRequestException(parameterName + " must be an integer");
-        }
-    }
 }

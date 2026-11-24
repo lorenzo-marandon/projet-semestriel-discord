@@ -200,6 +200,34 @@ class GuildResourceIT {
                 400, "INVALID_REQUEST");
         assertError(given().queryParam("page", "abc").get("/api/guilds"),
                 400, "INVALID_REQUEST");
+        assertError(given().queryParam("size", "999999999999999999999").get("/api/guilds"),
+                400, "INVALID_REQUEST");
+    }
+
+    @Test
+    void shouldFilterGuildNameLiterallyIgnoringCase() {
+        persistGuild("Alpha Community", null, LocalDateTime.of(2026, 1, 1, 8, 0));
+        persistGuild("community alpha second", null, LocalDateTime.of(2026, 1, 2, 8, 0));
+        UUID literal = persistGuild(
+                "Percent%_Guild", null, LocalDateTime.of(2026, 1, 3, 8, 0));
+
+        given().queryParam("name", "  ALPHA  ").queryParam("page", 1).queryParam("size", 1)
+                .get("/api/guilds")
+                .then().statusCode(200)
+                .body("items", hasSize(1))
+                .body("totalItems", equalTo(2))
+                .body("totalPages", equalTo(2));
+
+        given().queryParam("name", "%_").get("/api/guilds")
+                .then().statusCode(200)
+                .body("items", hasSize(1))
+                .body("items[0].id", equalTo(literal.toString()))
+                .body("totalItems", equalTo(1));
+
+        given().queryParam("name", "missing-guild-name").get("/api/guilds")
+                .then().statusCode(200).body("items", hasSize(0));
+        assertError(given().queryParam("name", "").get("/api/guilds"),
+                400, "INVALID_REQUEST");
     }
 
     @Test

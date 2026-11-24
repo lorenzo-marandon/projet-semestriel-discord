@@ -1,6 +1,8 @@
 package org.acme.discord.infrastructure.persistence;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
+import io.quarkus.hibernate.orm.panache.PanacheQuery;
+import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.LockModeType;
 
@@ -12,6 +14,20 @@ import java.util.UUID;
  */
 @ApplicationScoped
 public class GuildRepository implements PanacheRepositoryBase<GuildEntity, UUID> {
+
+    /**
+     * Builds a stably ordered guild query with an optional literal name filter.
+     *
+     * @param name optional normalized guild name fragment
+     * @return unpaged query
+     */
+    public PanacheQuery<GuildEntity> findForList(String name) {
+        Sort sort = Sort.ascending("createdAt", "id");
+        if (name == null) {
+            return findAll(sort);
+        }
+        return find("lower(name) like ?1 escape '!'", sort, LikePattern.containsLiteral(name));
+    }
 
     /**
      * Loads a guild while preventing concurrent updates or deletion.

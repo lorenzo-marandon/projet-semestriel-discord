@@ -2,16 +2,15 @@ package org.acme.discord.application;
 
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.panache.common.Page;
-import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.PersistenceException;
 import jakarta.transaction.Transactional;
 import org.acme.discord.application.dto.PageDTO;
+import org.acme.discord.application.dto.PageRequestDTO;
 import org.acme.discord.application.dto.RoleDTO;
 import org.acme.discord.application.dto.usecases.CreateRoleRequest;
 import org.acme.discord.application.dto.usecases.UpdateRoleRequest;
 import org.acme.discord.application.exception.GuildNotFoundException;
-import org.acme.discord.application.exception.InvalidRequestException;
 import org.acme.discord.application.exception.RoleInUseException;
 import org.acme.discord.application.exception.RoleNotFoundException;
 import org.acme.discord.infrastructure.mapper.RoleMapper;
@@ -66,20 +65,18 @@ public class RoleService {
     /**
      * Lists roles using stable database ordering and pagination.
      *
-     * @param page zero-based page index
-     * @param size page size
+     * @param pagination validated pagination parameters
+     * @param guildId optional guild identifier filter
      * @return paginated roles
      */
     @Transactional
-    public PageDTO<RoleDTO> list(int page, int size) {
-        validatePagination(page, size);
-        PanacheQuery<RoleEntity> query = roleRepository.findAll(Sort.ascending("position", "id"));
+    public PageDTO<RoleDTO> list(PageRequestDTO pagination, UUID guildId) {
+        PanacheQuery<RoleEntity> query = roleRepository.findForList(guildId);
         long totalItems = query.count();
-        List<RoleDTO> items = query.page(Page.of(page, size)).list().stream()
+        List<RoleDTO> items = query.page(Page.of(pagination.page(), pagination.size())).list().stream()
                 .map(RoleMapper::toDto)
                 .toList();
-        int totalPages = totalItems == 0 ? 0 : (int) ((totalItems + size - 1) / size);
-        return new PageDTO<>(items, page, size, totalItems, totalPages);
+        return PageDTO.of(items, pagination, totalItems);
     }
 
     /**
@@ -126,12 +123,4 @@ public class RoleService {
                 .orElseThrow(RoleNotFoundException::new);
     }
 
-    private static void validatePagination(int page, int size) {
-        if (page < 0) {
-            throw new InvalidRequestException("Page must be greater than or equal to 0");
-        }
-        if (size < 1 || size > 100) {
-            throw new InvalidRequestException("Size must be between 1 and 100");
-        }
-    }
 }

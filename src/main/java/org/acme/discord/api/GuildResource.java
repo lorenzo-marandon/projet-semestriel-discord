@@ -21,13 +21,13 @@ import org.acme.discord.application.AssociationService;
 import org.acme.discord.application.GuildService;
 import org.acme.discord.application.dto.GuildDTO;
 import org.acme.discord.application.dto.PageDTO;
+import org.acme.discord.application.dto.PageRequestDTO;
 import org.acme.discord.application.dto.UserDTO;
 import org.acme.discord.application.dto.usecases.CreateGuildRequest;
 import org.acme.discord.application.dto.usecases.UpdateGuildRequest;
 import org.acme.discord.application.exception.InvalidRequestException;
 
 import java.net.URI;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -64,9 +64,13 @@ public class GuildResource {
 
     @GET
     public PageDTO<GuildDTO> list(
-            @DefaultValue("0") @QueryParam("page") String page,
-            @DefaultValue("20") @QueryParam("size") String size) {
-        return guildService.list(parseInteger(page, "page"), parseInteger(size, "size"));
+            @DefaultValue(QueryParameters.DEFAULT_PAGE) @QueryParam("page") String page,
+            @DefaultValue(QueryParameters.DEFAULT_SIZE) @QueryParam("size") String size,
+            @QueryParam("name") String name,
+            @Context UriInfo uriInfo) {
+        PageRequestDTO pagination = QueryParameters.pagination(page, size);
+        return guildService.list(pagination, QueryParameters.optionalText(
+                name, "name", uriInfo.getQueryParameters().containsKey("name")));
     }
 
     @PUT
@@ -104,8 +108,12 @@ public class GuildResource {
 
     @GET
     @Path("/{guildId}/members")
-    public List<UserDTO> listMembers(@PathParam("guildId") String guildId) {
-        return associationService.listMembers(parseGuildId(guildId));
+    public PageDTO<UserDTO> listMembers(
+            @PathParam("guildId") String guildId,
+            @DefaultValue(QueryParameters.DEFAULT_PAGE) @QueryParam("page") String page,
+            @DefaultValue(QueryParameters.DEFAULT_SIZE) @QueryParam("size") String size) {
+        return associationService.listMembers(
+                parseGuildId(guildId), QueryParameters.pagination(page, size));
     }
 
     private static UUID parseGuildId(String value) {
@@ -124,11 +132,4 @@ public class GuildResource {
         }
     }
 
-    private static int parseInteger(String value, String parameterName) {
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException exception) {
-            throw new InvalidRequestException(parameterName + " must be an integer");
-        }
-    }
 }

@@ -214,6 +214,49 @@ class ChannelResourceIT {
     }
 
     @Test
+    void shouldCombineChannelFiltersBeforePagination() {
+        UUID selectedGuild = persistGuild("Filtered Channels Guild");
+        UUID otherGuild = persistGuild("Other Channels Guild");
+        UUID firstText = persistChannel("first-text", ChannelType.TEXT, 1, selectedGuild);
+        UUID secondText = persistChannel("second-text", ChannelType.TEXT, 2, selectedGuild);
+        persistChannel("voice", ChannelType.VOICE, 0, selectedGuild);
+        persistChannel("other-text", ChannelType.TEXT, 0, otherGuild);
+
+        given().queryParam("guildId", selectedGuild).get("/api/channels")
+                .then().statusCode(200).body("items", hasSize(3)).body("totalItems", equalTo(3));
+        given().queryParam("type", "VOICE").get("/api/channels")
+                .then().statusCode(200).body("items", hasSize(1))
+                .body("items[0].guildId", equalTo(selectedGuild.toString()));
+
+        given().queryParam("guildId", selectedGuild).queryParam("type", "TEXT")
+                .queryParam("page", 0).queryParam("size", 1).get("/api/channels")
+                .then().statusCode(200)
+                .body("items", hasSize(1))
+                .body("items[0].id", equalTo(firstText.toString()))
+                .body("totalItems", equalTo(2))
+                .body("totalPages", equalTo(2));
+        given().queryParam("guildId", selectedGuild).queryParam("type", "TEXT")
+                .queryParam("page", 1).queryParam("size", 1).get("/api/channels")
+                .then().statusCode(200).body("items[0].id", equalTo(secondText.toString()));
+
+        given().queryParam("guildId", otherGuild).queryParam("type", "VOICE")
+                .get("/api/channels")
+                .then().statusCode(200).body("items", hasSize(0)).body("totalItems", equalTo(0));
+        assertError(given().queryParam("guildId", "bad-id").get("/api/channels"),
+                400, "INVALID_REQUEST");
+        assertError(given().queryParam("guildId", "").get("/api/channels"),
+                400, "INVALID_REQUEST");
+        assertError(given().queryParam("type", "text").get("/api/channels"),
+                400, "INVALID_REQUEST");
+        assertError(given().queryParam("type", "VIDEO").get("/api/channels"),
+                400, "INVALID_REQUEST");
+        assertError(given().queryParam("type", " ").get("/api/channels"),
+                400, "INVALID_REQUEST");
+        assertError(given().queryParam("type", "").get("/api/channels"),
+                400, "INVALID_REQUEST");
+    }
+
+    @Test
     void shouldUpdateEditableFieldsAndPreserveIdentifierAndGuild() {
         UUID guildId = persistGuild("Update Guild");
         UUID otherGuildId = persistGuild("Other Guild");

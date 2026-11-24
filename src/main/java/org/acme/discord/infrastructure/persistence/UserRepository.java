@@ -1,10 +1,11 @@
 package org.acme.discord.infrastructure.persistence;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
+import io.quarkus.hibernate.orm.panache.PanacheQuery;
+import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.LockModeType;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,18 +26,28 @@ public class UserRepository implements PanacheRepositoryBase<UserEntity, UUID> {
     }
 
     /**
-     * Lists the members of a guild using stable ordering.
+     * Builds an unpaged query for a guild's members using stable ordering.
      *
      * @param guildId guild identifier
-     * @return guild members
+     * @return unpaged guild member query
      */
-    public List<UserEntity> listByGuildId(UUID guildId) {
-        return getEntityManager().createQuery(
-                        "select user from UserEntity user join user.guilds guild "
-                                + "where guild.id = :guildId order by user.joinedAt, user.id",
-                        UserEntity.class)
-                .setParameter("guildId", guildId)
-                .getResultList();
+    public PanacheQuery<UserEntity> findByGuildId(UUID guildId) {
+        return find("select distinct user from UserEntity user join user.guilds guild "
+                + "where guild.id = ?1 order by user.joinedAt, user.id", guildId);
+    }
+
+    /**
+     * Builds a stably ordered user query with an optional literal username filter.
+     *
+     * @param username optional normalized username fragment
+     * @return unpaged query
+     */
+    public PanacheQuery<UserEntity> findForList(String username) {
+        Sort sort = Sort.ascending("joinedAt", "id");
+        if (username == null) {
+            return findAll(sort);
+        }
+        return find("lower(username) like ?1 escape '!'", sort, LikePattern.containsLiteral(username));
     }
 
     /**

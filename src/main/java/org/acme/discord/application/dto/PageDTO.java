@@ -20,9 +20,26 @@ public record PageDTO<T>(
         int page,
         int size,
         long totalItems,
-        int totalPages) {
+        long totalPages) {
 
     public PageDTO {
         items = List.copyOf(items);
+    }
+
+    /**
+     * Creates page metadata without overflow-prone addition.
+     *
+     * @param items items returned by the database query
+     * @param request validated page request
+     * @param totalItems number of matching database rows
+     * @param <T> response item type
+     * @return immutable page response
+     */
+    public static <T> PageDTO<T> of(List<T> items, PageRequestDTO request, long totalItems) {
+        long totalPages = totalItems / request.size();
+        if (totalItems % request.size() != 0) {
+            totalPages++;
+        }
+        return new PageDTO<>(items, request.page(), request.size(), totalItems, totalPages);
     }
 }

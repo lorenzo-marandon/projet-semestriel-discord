@@ -2,11 +2,11 @@ package org.acme.discord.application;
 
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.panache.common.Page;
-import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import org.acme.discord.application.dto.ChannelDTO;
 import org.acme.discord.application.dto.PageDTO;
+import org.acme.discord.application.dto.PageRequestDTO;
 import org.acme.discord.application.dto.usecases.CreateChannelRequest;
 import org.acme.discord.application.dto.usecases.UpdateChannelRequest;
 import org.acme.discord.application.exception.ChannelNotFoundException;
@@ -17,6 +17,7 @@ import org.acme.discord.infrastructure.persistence.ChannelEntity;
 import org.acme.discord.infrastructure.persistence.ChannelRepository;
 import org.acme.discord.infrastructure.persistence.GuildEntity;
 import org.acme.discord.infrastructure.persistence.GuildRepository;
+import org.acme.discord.domain.ChannelType;
 
 import java.util.List;
 import java.util.UUID;
@@ -64,20 +65,19 @@ public class ChannelService {
     /**
      * Lists channels using stable database ordering and pagination.
      *
-     * @param page zero-based page index
-     * @param size page size
+     * @param pagination validated pagination parameters
+     * @param guildId optional guild identifier filter
+     * @param type optional exact channel type filter
      * @return paginated channels
      */
     @Transactional
-    public PageDTO<ChannelDTO> list(int page, int size) {
-        validatePagination(page, size);
-        PanacheQuery<ChannelEntity> query = channelRepository.findAll(Sort.ascending("position", "id"));
+    public PageDTO<ChannelDTO> list(PageRequestDTO pagination, UUID guildId, String type) {
+        PanacheQuery<ChannelEntity> query = channelRepository.findForList(guildId, parseType(type));
         long totalItems = query.count();
-        List<ChannelDTO> items = query.page(Page.of(page, size)).list().stream()
+        List<ChannelDTO> items = query.page(Page.of(pagination.page(), pagination.size())).list().stream()
                 .map(ChannelMapper::toDto)
                 .toList();
-        int totalPages = totalItems == 0 ? 0 : (int) ((totalItems + size - 1) / size);
-        return new PageDTO<>(items, page, size, totalItems, totalPages);
+        return PageDTO.of(items, pagination, totalItems);
     }
 
     /**
@@ -113,12 +113,14 @@ public class ChannelService {
                 .orElseThrow(ChannelNotFoundException::new);
     }
 
-    private static void validatePagination(int page, int size) {
-        if (page < 0) {
-            throw new InvalidRequestException("Page must be greater than or equal to 0");
+    private static ChannelType parseType(String type) {
+        if (type == null) {
+            return null;
         }
-        if (size < 1 || size > 100) {
-            throw new InvalidRequestException("Size must be between 1 and 100");
+        try {
+            return ChannelType.valueOf(type);
+        } catch (IllegalArgumentException exception) {
+            throw new InvalidRequestException("Invalid channel type");
         }
     }
 }

@@ -187,6 +187,42 @@ class UserResourceIT {
                 400, "INVALID_REQUEST");
         assertError(given().queryParam("page", "abc").get("/api/users"),
                 400, "INVALID_REQUEST");
+        assertError(given().queryParam("size", -1).get("/api/users"),
+                400, "INVALID_REQUEST");
+        assertError(given().queryParam("size", "abc").get("/api/users"),
+                400, "INVALID_REQUEST");
+        assertError(given().queryParam("page", "999999999999999999999").get("/api/users"),
+                400, "INVALID_REQUEST");
+        assertError(given().queryParam("page", Integer.MAX_VALUE).queryParam("size", 100)
+                        .get("/api/users"),
+                400, "INVALID_REQUEST");
+    }
+
+    @Test
+    void shouldFilterUsernameLiterallyIgnoringCaseBeforePagination() {
+        persistUser("Alpha-One", "Alpha One", LocalDateTime.of(2026, 1, 1, 8, 0));
+        persistUser("second-ALPHA", "Second Alpha", LocalDateTime.of(2026, 1, 2, 8, 0));
+        persistUser("unrelated", "Unrelated", LocalDateTime.of(2026, 1, 3, 8, 0));
+        UUID literal = persistUser("literal%_user", "Literal", LocalDateTime.of(2026, 1, 4, 8, 0));
+        persistUser("literalXXuser", "Wildcard lookalike", LocalDateTime.of(2026, 1, 5, 8, 0));
+
+        given().queryParam("username", "  aLpHa  ").queryParam("size", 1)
+                .get("/api/users")
+                .then().statusCode(200)
+                .body("items", hasSize(1))
+                .body("totalItems", equalTo(2))
+                .body("totalPages", equalTo(2));
+
+        given().queryParam("username", "%_").get("/api/users")
+                .then().statusCode(200)
+                .body("items", hasSize(1))
+                .body("items[0].id", equalTo(literal.toString()))
+                .body("totalItems", equalTo(1));
+
+        given().queryParam("username", "missing").get("/api/users")
+                .then().statusCode(200).body("items", hasSize(0)).body("totalItems", equalTo(0));
+        assertError(given().queryParam("username", "   ").get("/api/users"),
+                400, "INVALID_REQUEST");
     }
 
     @Test

@@ -2,6 +2,10 @@ package org.acme.discord.application;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
+import io.quarkus.hibernate.orm.panache.PanacheQuery;
+import io.quarkus.panache.common.Page;
+import org.acme.discord.application.dto.PageDTO;
+import org.acme.discord.application.dto.PageRequestDTO;
 import org.acme.discord.application.dto.RoleDTO;
 import org.acme.discord.application.dto.UserDTO;
 import org.acme.discord.application.exception.GuildNotFoundException;
@@ -87,16 +91,20 @@ public class AssociationService {
      * Lists a guild's members without exposing persistence entities.
      *
      * @param guildId guild identifier
-     * @return member DTOs in stable order
+     * @param pagination validated pagination parameters
+     * @return paginated member DTOs in stable order
      */
     @Transactional
-    public List<UserDTO> listMembers(UUID guildId) {
+    public PageDTO<UserDTO> listMembers(UUID guildId, PageRequestDTO pagination) {
         if (guildRepository.findByIdOptional(guildId).isEmpty()) {
             throw new GuildNotFoundException();
         }
-        return userRepository.listByGuildId(guildId).stream()
+        PanacheQuery<UserEntity> query = userRepository.findByGuildId(guildId);
+        long totalItems = query.count();
+        List<UserDTO> items = query.page(Page.of(pagination.page(), pagination.size())).list().stream()
                 .map(UserMapper::toDto)
                 .toList();
+        return PageDTO.of(items, pagination, totalItems);
     }
 
     /**
@@ -146,16 +154,20 @@ public class AssociationService {
      * Lists roles assigned to a user without exposing persistence entities.
      *
      * @param userId user identifier
-     * @return role DTOs in stable order
+     * @param pagination validated pagination parameters
+     * @return paginated role DTOs in stable order
      */
     @Transactional
-    public List<RoleDTO> listRoles(UUID userId) {
+    public PageDTO<RoleDTO> listRoles(UUID userId, PageRequestDTO pagination) {
         if (userRepository.findByIdOptional(userId).isEmpty()) {
             throw new UserNotFoundException();
         }
-        return roleRepository.listByUserId(userId).stream()
+        PanacheQuery<RoleEntity> query = roleRepository.findByUserId(userId);
+        long totalItems = query.count();
+        List<RoleDTO> items = query.page(Page.of(pagination.page(), pagination.size())).list().stream()
                 .map(RoleMapper::toDto)
                 .toList();
+        return PageDTO.of(items, pagination, totalItems);
     }
 
     private UserEntity findUserForUpdate(UUID userId) {

@@ -33,6 +33,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -77,9 +78,13 @@ class AssociationResourceIT {
         given().get("/api/guilds/{guildId}/members", guildId)
                 .then().statusCode(200)
                 .contentType("application/json")
-                .body("", hasSize(1))
-                .body("[0].id", equalTo(userId.toString()))
-                .body("[0].username", equalTo("member"));
+                .body("items", hasSize(1))
+                .body("items[0].id", equalTo(userId.toString()))
+                .body("items[0].username", equalTo("member"))
+                .body("page", equalTo(0))
+                .body("size", equalTo(20))
+                .body("totalItems", equalTo(1))
+                .body("totalPages", equalTo(1));
     }
 
     @Test
@@ -88,7 +93,9 @@ class AssociationResourceIT {
 
         given().get("/api/guilds/{guildId}/members", guildId)
                 .then().statusCode(200)
-                .body("", hasSize(0));
+                .body("items", hasSize(0))
+                .body("totalItems", equalTo(0))
+                .body("totalPages", equalTo(0));
     }
 
     @Test
@@ -136,9 +143,13 @@ class AssociationResourceIT {
         given().get("/api/users/{userId}/roles", userId)
                 .then().statusCode(200)
                 .contentType("application/json")
-                .body("", hasSize(1))
-                .body("[0].id", equalTo(roleId.toString()))
-                .body("[0].guildId", equalTo(guildId.toString()));
+                .body("items", hasSize(1))
+                .body("items[0].id", equalTo(roleId.toString()))
+                .body("items[0].guildId", equalTo(guildId.toString()))
+                .body("page", equalTo(0))
+                .body("size", equalTo(20))
+                .body("totalItems", equalTo(1))
+                .body("totalPages", equalTo(1));
     }
 
     @Test
@@ -147,7 +158,66 @@ class AssociationResourceIT {
 
         given().get("/api/users/{userId}/roles", userId)
                 .then().statusCode(200)
-                .body("", hasSize(0));
+                .body("items", hasSize(0))
+                .body("totalItems", equalTo(0))
+                .body("totalPages", equalTo(0));
+    }
+
+    @Test
+    void shouldPaginateGuildMembersWithoutDuplicates() {
+        UUID guildId = persistGuild("Paged Members Guild");
+        UUID first = persistUser("paged-member-1", "Paged Member 1");
+        UUID second = persistUser("paged-member-2", "Paged Member 2");
+        UUID third = persistUser("paged-member-3", "Paged Member 3");
+        putMember(guildId, first).then().statusCode(204);
+        putMember(guildId, second).then().statusCode(204);
+        putMember(guildId, third).then().statusCode(204);
+
+        Response firstPage = given().queryParam("page", 0).queryParam("size", 2)
+                .get("/api/guilds/{guildId}/members", guildId);
+        Response secondPage = given().queryParam("page", 1).queryParam("size", 2)
+                .get("/api/guilds/{guildId}/members", guildId);
+
+        firstPage.then().statusCode(200).body("items", hasSize(2))
+                .body("totalItems", equalTo(3)).body("totalPages", equalTo(2));
+        secondPage.then().statusCode(200).body("items", hasSize(1))
+                .body("totalItems", equalTo(3)).body("totalPages", equalTo(2));
+        assertNotEquals(
+                firstPage.<String>path("items[0].id"), secondPage.<String>path("items[0].id"));
+
+        given().queryParam("page", 2).queryParam("size", 2)
+                .get("/api/guilds/{guildId}/members", guildId)
+                .then().statusCode(200).body("items", hasSize(0));
+        assertError(given().queryParam("size", 0)
+                .get("/api/guilds/{guildId}/members", guildId), 400, "INVALID_REQUEST");
+    }
+
+    @Test
+    void shouldPaginateAssignedRolesWithoutDuplicates() {
+        UUID guildId = persistGuild("Paged Roles Guild");
+        UUID userId = persistUser("paged-role-user", "Paged Role User");
+        UUID first = persistRole("Paged Role 1", 1, guildId);
+        UUID second = persistRole("Paged Role 2", 1, guildId);
+        UUID third = persistRole("Paged Role 3", 2, guildId);
+        putMember(guildId, userId).then().statusCode(204);
+        putRole(userId, first).then().statusCode(204);
+        putRole(userId, second).then().statusCode(204);
+        putRole(userId, third).then().statusCode(204);
+
+        Response firstPage = given().queryParam("page", 0).queryParam("size", 2)
+                .get("/api/users/{userId}/roles", userId);
+        Response secondPage = given().queryParam("page", 1).queryParam("size", 2)
+                .get("/api/users/{userId}/roles", userId);
+
+        firstPage.then().statusCode(200).body("items", hasSize(2))
+                .body("totalItems", equalTo(3)).body("totalPages", equalTo(2));
+        secondPage.then().statusCode(200).body("items", hasSize(1))
+                .body("items[0].id", equalTo(third.toString()));
+        assertNotEquals(
+                firstPage.<String>path("items[0].id"), secondPage.<String>path("items[0].id"));
+
+        assertError(given().queryParam("page", "999999999999999999999")
+                .get("/api/users/{userId}/roles", userId), 400, "INVALID_REQUEST");
     }
 
     @Test

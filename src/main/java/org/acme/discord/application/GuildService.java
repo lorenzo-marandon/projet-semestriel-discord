@@ -2,17 +2,16 @@ package org.acme.discord.application;
 
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.panache.common.Page;
-import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.PersistenceException;
 import jakarta.transaction.Transactional;
 import org.acme.discord.application.dto.GuildDTO;
 import org.acme.discord.application.dto.PageDTO;
+import org.acme.discord.application.dto.PageRequestDTO;
 import org.acme.discord.application.dto.usecases.CreateGuildRequest;
 import org.acme.discord.application.dto.usecases.UpdateGuildRequest;
 import org.acme.discord.application.exception.GuildNotEmptyException;
 import org.acme.discord.application.exception.GuildNotFoundException;
-import org.acme.discord.application.exception.InvalidRequestException;
 import org.acme.discord.infrastructure.mapper.GuildMapper;
 import org.acme.discord.infrastructure.persistence.GuildEntity;
 import org.acme.discord.infrastructure.persistence.GuildRepository;
@@ -62,20 +61,18 @@ public class GuildService {
     /**
      * Lists guilds using stable database ordering and pagination.
      *
-     * @param page zero-based page index
-     * @param size page size
+     * @param pagination validated pagination parameters
+     * @param name optional normalized guild name fragment
      * @return paginated guilds
      */
     @Transactional
-    public PageDTO<GuildDTO> list(int page, int size) {
-        validatePagination(page, size);
-        PanacheQuery<GuildEntity> query = guildRepository.findAll(Sort.ascending("createdAt", "id"));
+    public PageDTO<GuildDTO> list(PageRequestDTO pagination, String name) {
+        PanacheQuery<GuildEntity> query = guildRepository.findForList(name);
         long totalItems = query.count();
-        List<GuildDTO> items = query.page(Page.of(page, size)).list().stream()
+        List<GuildDTO> items = query.page(Page.of(pagination.page(), pagination.size())).list().stream()
                 .map(GuildMapper::toDto)
                 .toList();
-        int totalPages = totalItems == 0 ? 0 : (int) ((totalItems + size - 1) / size);
-        return new PageDTO<>(items, page, size, totalItems, totalPages);
+        return PageDTO.of(items, pagination, totalItems);
     }
 
     /**
@@ -122,15 +119,6 @@ public class GuildService {
     private GuildEntity findEntity(UUID id) {
         return guildRepository.findByIdOptional(id)
                 .orElseThrow(GuildNotFoundException::new);
-    }
-
-    private static void validatePagination(int page, int size) {
-        if (page < 0) {
-            throw new InvalidRequestException("Page must be greater than or equal to 0");
-        }
-        if (size < 1 || size > 100) {
-            throw new InvalidRequestException("Size must be between 1 and 100");
-        }
     }
 
     private static boolean isForeignKeyViolation(Throwable exception) {

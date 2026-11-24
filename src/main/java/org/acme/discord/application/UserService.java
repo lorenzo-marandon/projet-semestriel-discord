@@ -1,18 +1,17 @@
 package org.acme.discord.application;
 
 import io.quarkus.panache.common.Page;
-import io.quarkus.panache.common.Sort;
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.PersistenceException;
 import jakarta.transaction.Transactional;
 import org.acme.discord.application.dto.PageDTO;
+import org.acme.discord.application.dto.PageRequestDTO;
 import org.acme.discord.application.dto.UserDTO;
 import org.acme.discord.application.dto.usecases.CreateUserRequest;
 import org.acme.discord.application.dto.usecases.UpdateUserRequest;
 import org.acme.discord.application.exception.UserNotFoundException;
 import org.acme.discord.application.exception.UsernameConflictException;
-import org.acme.discord.application.exception.InvalidRequestException;
 import org.acme.discord.infrastructure.mapper.UserMapper;
 import org.acme.discord.infrastructure.persistence.GuildEntity;
 import org.acme.discord.infrastructure.persistence.RoleEntity;
@@ -70,20 +69,18 @@ public class  UserService {
     /**
      * Lists users using stable database ordering and pagination.
      *
-     * @param page zero-based page index
-     * @param size page size
+     * @param pagination validated pagination parameters
+     * @param username optional normalized username fragment
      * @return paginated users
      */
     @Transactional
-    public PageDTO<UserDTO> list(int page, int size) {
-        validatePagination(page, size);
-        PanacheQuery<UserEntity> query = userRepository.findAll(Sort.ascending("joinedAt", "id"));
+    public PageDTO<UserDTO> list(PageRequestDTO pagination, String username) {
+        PanacheQuery<UserEntity> query = userRepository.findForList(username);
         long totalItems = query.count();
-        List<UserDTO> items = query.page(Page.of(page, size)).list().stream()
+        List<UserDTO> items = query.page(Page.of(pagination.page(), pagination.size())).list().stream()
                 .map(UserMapper::toDto)
                 .toList();
-        int totalPages = totalItems == 0 ? 0 : (int) ((totalItems + size - 1) / size);
-        return new PageDTO<>(items, page, size, totalItems, totalPages);
+        return PageDTO.of(items, pagination, totalItems);
     }
 
     /**
@@ -138,15 +135,6 @@ public class  UserService {
     private void ensureUsernameAvailable(String username) {
         if (userRepository.existsByUsername(username)) {
             throw usernameConflict();
-        }
-    }
-
-    private static void validatePagination(int page, int size) {
-        if (page < 0) {
-            throw new InvalidRequestException("Page must be greater than or equal to 0");
-        }
-        if (size < 1 || size > 100) {
-            throw new InvalidRequestException("Size must be between 1 and 100");
         }
     }
 
