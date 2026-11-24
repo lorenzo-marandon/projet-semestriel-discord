@@ -17,13 +17,16 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
+import org.acme.discord.application.AssociationService;
 import org.acme.discord.application.GuildService;
 import org.acme.discord.application.dto.GuildDTO;
 import org.acme.discord.application.dto.PageDTO;
+import org.acme.discord.application.dto.UserDTO;
 import org.acme.discord.application.dto.usecases.CreateGuildRequest;
 import org.acme.discord.application.dto.usecases.UpdateGuildRequest;
 
 import java.net.URI;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -35,10 +38,12 @@ import java.util.UUID;
 public class GuildResource {
 
     private final GuildService guildService;
+    private final AssociationService associationService;
 
     @Inject
-    public GuildResource(GuildService guildService) {
+    public GuildResource(GuildService guildService, AssociationService associationService) {
         this.guildService = guildService;
+        this.associationService = associationService;
     }
 
     @POST
@@ -78,11 +83,43 @@ public class GuildResource {
         return Response.noContent().build();
     }
 
+    @PUT
+    @Path("/{guildId}/members/{userId}")
+    public Response addMember(
+            @PathParam("guildId") String guildId,
+            @PathParam("userId") String userId) {
+        associationService.addMember(parseGuildId(guildId), parseUserId(userId));
+        return Response.noContent().build();
+    }
+
+    @DELETE
+    @Path("/{guildId}/members/{userId}")
+    public Response removeMember(
+            @PathParam("guildId") String guildId,
+            @PathParam("userId") String userId) {
+        associationService.removeMember(parseGuildId(guildId), parseUserId(userId));
+        return Response.noContent().build();
+    }
+
+    @GET
+    @Path("/{guildId}/members")
+    public List<UserDTO> listMembers(@PathParam("guildId") String guildId) {
+        return associationService.listMembers(parseGuildId(guildId));
+    }
+
     private static UUID parseGuildId(String value) {
         try {
             return UUID.fromString(value);
         } catch (IllegalArgumentException exception) {
             throw new IllegalArgumentException("Invalid guild id");
+        }
+    }
+
+    private static UUID parseUserId(String value) {
+        try {
+            return UUID.fromString(value);
+        } catch (IllegalArgumentException exception) {
+            throw new IllegalArgumentException("Invalid user id");
         }
     }
 

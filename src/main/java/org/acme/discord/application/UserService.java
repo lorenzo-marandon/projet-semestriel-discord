@@ -115,7 +115,8 @@ public class  UserService {
      */
     @Transactional
     public void delete(UUID id) {
-        UserEntity entity = findEntity(id);
+        UserEntity entity = userRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new NoSuchElementException(USER_NOT_FOUND_MESSAGE));
         Set<GuildEntity> guilds = Set.copyOf(entity.getGuilds());
         Set<RoleEntity> roles = Set.copyOf(entity.getRoles());
 

@@ -5,6 +5,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.LockModeType;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,6 +26,21 @@ public class RoleRepository implements PanacheRepositoryBase<RoleEntity, UUID> {
      */
     public Optional<RoleEntity> findByIdForUpdate(UUID id) {
         return findByIdOptional(id, LockModeType.PESSIMISTIC_WRITE);
+    }
+
+    /**
+     * Lists roles assigned to a user using stable ordering.
+     *
+     * @param userId user identifier
+     * @return assigned roles
+     */
+    public List<RoleEntity> listByUserId(UUID userId) {
+        return getEntityManager().createQuery(
+                        "select role from RoleEntity role join role.users user "
+                                + "where user.id = :userId order by role.position, role.id",
+                        RoleEntity.class)
+                .setParameter("userId", userId)
+                .getResultList();
     }
 
     /**

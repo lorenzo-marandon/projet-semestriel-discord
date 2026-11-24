@@ -4,6 +4,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.acme.discord.application.dto.ErrorDTO;
 import org.acme.discord.application.exception.RoleInUseException;
+import org.acme.discord.application.exception.RoleMembershipConflictException;
 import org.acme.discord.application.exception.RoleNotFoundException;
 import org.junit.jupiter.api.Test;
 
@@ -23,6 +24,9 @@ class RoleErrorMapperTest {
                 404, "ROLE_NOT_FOUND", "Role not found", before);
         assertError(new RoleInUseMapper().toResponse(new RoleInUseException()),
                 409, "ROLE_IN_USE", "Role is assigned to one or more users", before);
+        assertError(new RoleMembershipConflictMapper().toResponse(new RoleMembershipConflictException()),
+                409, "USER_NOT_GUILD_MEMBER",
+                "User must belong to the role's guild before receiving the role", before);
     }
 
     private static void assertError(
